@@ -26,3 +26,11 @@
 - [x] Make placed components movable and animate meshing/interaction when the user runs the motion control.
 - [x] Revalidate measurement, export, responsive layout, and build output.
 - [x] Save a new checkpoint for delivery.
+
+## Functional restoration revision
+
+- [x] Compare the original attached bundle structure with the current simplified Gearbuilder implementation.
+- [x] Restore or adapt the original gear-generation, assembly, and export logic rather than relying on the simplified renderer.
+- [x] Preserve the blueprint theme, centered working sheet, Gearbuilder branding, and requested control removals.
+- [x] Verify real workflows for Spur Gears, Internal Gears, Gear Racks, component interaction, and arbitrary distance measurement.
+- [x] Run build/runtime checks and save a new checkpoint.
