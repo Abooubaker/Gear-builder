@@ -34,3 +34,11 @@
 - [x] Preserve the blueprint theme, centered working sheet, Gearbuilder branding, and requested control removals.
 - [x] Verify real workflows for Spur Gears, Internal Gears, Gear Racks, component interaction, and arbitrary distance measurement.
 - [x] Run build/runtime checks and save a new checkpoint.
+
+## Measurement and contrast revision
+
+- [x] Replace center-to-center-only measurement with arbitrary-point measurement on the original SVG working sheet.
+- [x] Keep measurement readable with point markers, a line, coordinates, and a distance label.
+- [x] Brighten gear fills/strokes and their text labels against the blueprint field.
+- [x] Restyle Clear all gears with a visible warm warning treatment instead of a white button.
+- [x] Validate the interaction, build, and final preview, then save a new checkpoint.

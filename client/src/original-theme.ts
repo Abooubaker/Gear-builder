@@ -28,6 +28,19 @@ style.textContent = `
   #root .gb-brand-overlay span { display:block; margin-top:6px; color:rgba(214,241,251,.62); font:9px/1 var(--gb-mono); letter-spacing:.13em; text-transform:uppercase; }
   #root .gb-original-func-note { position:fixed; z-index:1001; top:24px; right:24px; color:rgba(214,241,251,.66); font:9px var(--gb-mono); letter-spacing:.12em; text-transform:uppercase; pointer-events:none; }
   #root [data-gb-hidden="true"] { display:none !important; }
+  #root button[title="Clear all gears"] { background: #ffd166 !important; color: #073a76 !important; border: 2px solid #ffe9a8 !important; box-shadow: 0 0 0 2px rgba(7,58,118,.2), 0 4px 0 rgba(4,47,104,.3) !important; font-weight: 800 !important; }
+  #root button[title="Clear all gears"]:hover { background: #ffe7a3 !important; color: #042f68 !important; transform: translateY(-1px); }
+  #root svg[aria-label="Interactive gear designer canvas"] g > path,
+  #root svg[aria-label="Interactive gear designer canvas"] g > circle,
+  #root svg[aria-label="Interactive gear designer canvas"] g > polygon { fill: #79d8f1 !important; stroke: #d9f8ff !important; stroke-width: 1.25 !important; filter: drop-shadow(0 0 2px rgba(214,241,251,.22)); }
+  #root svg[aria-label="Interactive gear designer canvas"] text { fill: #effcff !important; stroke: none !important; paint-order: stroke; font-weight: 700; }
+  #root .gb-measure-status { position:absolute; top:16px; left:50%; transform:translateX(-50%); z-index:12; padding:9px 14px; border:1px solid rgba(214,241,251,.6); background:rgba(4,47,104,.88); color:#effcff; font:12px/1 var(--gb-hand); letter-spacing:.04em; pointer-events:none; box-shadow:0 3px 0 rgba(4,47,104,.2); }
+  #root .gb-measure-status strong { color:#ffd166; }
+  #root .gb-measure-overlay line { stroke:#ffd166; stroke-width:2.5; stroke-dasharray:8 5; vector-effect:non-scaling-stroke; }
+  #root .gb-measure-overlay circle { fill:#ffd166; stroke:#effcff; stroke-width:2; vector-effect:non-scaling-stroke; }
+  #root .gb-measure-overlay rect { fill:#042f68; stroke:#ffd166; stroke-width:1; rx:3; vector-effect:non-scaling-stroke; }
+  #root .gb-measure-overlay text { fill:#effcff !important; font:700 13px var(--gb-mono); letter-spacing:.02em; }
+  @media (max-width: 767px) { #root .gb-measure-status { top:10px; font-size:10px; padding:8px 10px; } }
   @media (max-width: 767px) { #root > div:first-child { padding-top:62px !important; } #root .gb-brand-overlay { height:62px; padding:10px 14px; } #root .gb-brand-overlay img { width:34px; height:34px; } #root .gb-brand-overlay strong { font-size:28px; } #root .gb-brand-overlay span { font-size:7px; } #root .gb-original-func-note { display:none; } }
 `;
 document.head.appendChild(style);
@@ -84,12 +97,99 @@ function normalizeBrandText(root: HTMLElement) {
   });
 }
 
+function getCanvas(root: HTMLElement) {
+  return Array.from(root.querySelectorAll('svg[aria-label="Interactive gear designer canvas"]'))[0] as SVGSVGElement | undefined;
+}
+
+function svgPoint(svg: SVGSVGElement, event: PointerEvent) {
+  const point = svg.createSVGPoint();
+  point.x = event.clientX;
+  point.y = event.clientY;
+  const matrix = svg.getScreenCTM();
+  if (!matrix) return null;
+  const local = point.matrixTransform(matrix.inverse());
+  return { x: local.x, y: local.y };
+}
+
+function addSvgElement<T extends keyof SVGElementTagNameMap>(name: T, attributes: Record<string, string>) {
+  const element = document.createElementNS("http://www.w3.org/2000/svg", name) as SVGElementTagNameMap[T];
+  Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+  return element;
+}
+
+function installArbitraryMeasurement(root: HTMLElement) {
+  const svg = getCanvas(root);
+  if (!svg || svg.dataset.gbMeasurementInstalled === "true") return;
+  svg.dataset.gbMeasurementInstalled = "true";
+  const state: { active: boolean; points: Array<{ x: number; y: number }> } = { active: false, points: [] };
+  const overlay = addSvgElement("g", { class: "gb-measure-overlay", "pointer-events": "none" });
+  svg.appendChild(overlay);
+  const host = svg.parentElement as HTMLElement | null;
+  if (host) host.style.position = "relative";
+  const status = document.createElement("div");
+  status.className = "gb-measure-status";
+  status.hidden = true;
+  status.innerHTML = "<strong>MEASURE ANYTHING</strong> · click two points on the sheet";
+  if (host) host.appendChild(status);
+
+  const render = () => {
+    overlay.replaceChildren();
+    if (!state.active) { status.hidden = true; return; }
+    status.hidden = false;
+    if (state.points[0]) {
+      overlay.appendChild(addSvgElement("circle", { cx: String(state.points[0].x), cy: String(state.points[0].y), r: "5" }));
+    }
+    if (state.points[1]) {
+      const first = state.points[0]; const second = state.points[1];
+      const dx = second.x - first.x; const dy = second.y - first.y; const distance = Math.sqrt(dx * dx + dy * dy);
+      overlay.appendChild(addSvgElement("line", { x1: String(first.x), y1: String(first.y), x2: String(second.x), y2: String(second.y) }));
+      overlay.appendChild(addSvgElement("circle", { cx: String(second.x), cy: String(second.y), r: "5" }));
+      const labelX = (first.x + second.x) / 2; const labelY = (first.y + second.y) / 2 - 12;
+      overlay.appendChild(addSvgElement("rect", { x: String(labelX - 58), y: String(labelY - 15), width: "116", height: "22" }));
+      const label = addSvgElement("text", { x: String(labelX), y: String(labelY), "text-anchor": "middle" });
+      label.textContent = `${distance.toFixed(2)} units`;
+      overlay.appendChild(label);
+      status.innerHTML = `<strong>${distance.toFixed(2)} units</strong> · click another point to start a new measure`;
+    }
+  };
+  const setActive = (active: boolean) => { state.active = active; state.points = []; render(); };
+  const handleButton = (event: Event) => { event.preventDefault(); event.stopImmediatePropagation(); setActive(!state.active); };
+  root.addEventListener("click", (event) => {
+    const target = event.target as Element | null;
+    const button = target?.closest("button");
+    if (button && /measure distance/i.test(button.textContent || "")) handleButton(event);
+  }, true);
+  svg.addEventListener("pointerdown", (event) => {
+    if (!state.active || event.button !== 0) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    const point = svgPoint(svg, event); if (!point) return;
+    state.points = state.points.length >= 2 ? [point] : [...state.points, point];
+    render();
+  }, true);
+  window.addEventListener("keydown", (event) => { if (event.key === "Escape" && state.active) setActive(false); });
+  render();
+}
+
+function brightenGearArtwork(root: HTMLElement) {
+  const svg = getCanvas(root);
+  if (!svg) return;
+  svg.querySelectorAll("g > path, g > circle, g > polygon").forEach((element) => {
+    const node = element as SVGElement;
+    if (node.getAttribute("data-gb-bright") === "true") return;
+    node.setAttribute("data-gb-bright", "true");
+    node.style.setProperty("fill", "#79d8f1", "important");
+    node.style.setProperty("stroke", "#d9f8ff", "important");
+  });
+}
+
 function applyTheme() {
   const root = document.getElementById("root");
   if (!root) return;
   hideUnwantedControls(root);
   normalizeBrandText(root);
   addBrand(root);
+  installArbitraryMeasurement(root);
+  brightenGearArtwork(root);
 }
 
 const observer = new MutationObserver(applyTheme);
