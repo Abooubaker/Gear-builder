@@ -57,7 +57,7 @@ Use **Caveat** for headings, labels, annotations, and tool names to provide the 
 
 ## Brand Essence
 
-GearDXF is a practical browser drafting bench for makers and gear designers who want quick, visual DXF work without a heavy CAD setup. Personality: **observant, workshop-minded, direct**.
+Gearbuilder is a practical browser drafting bench for makers and gear designers who want quick, visual DXF work without a heavy CAD setup. Personality: **observant, workshop-minded, direct**.
 
 ## Brand Voice
 
@@ -71,7 +71,11 @@ Example lines:
 
 ## Wordmark & Logo
 
-Use the user-provided `abobaker.webp` mark as the recognizable brand stamp in the header, placed inside a hand-inked square so it feels like a maker’s seal. Pair it with the custom text lockup “GearDXF / drafting bench” in Caveat rather than relying on a default wordmark treatment.
+Use the user-provided transparent `abobakernobg.png` mark as the recognizable brand stamp in the header, placed inside a hand-inked square so it feels like a maker’s seal. Pair it with the custom text lockup “Gearbuilder / drafting bench” in Caveat rather than relying on a default wordmark treatment.
+
+## Current product naming decision
+
+At the user’s request, the visible product name is **Gearbuilder**. The product story should still emphasize drafting, measuring, cutting, and DXF export before simulation terminology.
 
 ## Signature Brand Color
 

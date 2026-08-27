@@ -15,3 +15,14 @@
 - Ground-truth direction: monochrome blue technical blueprint with hand-drawn drafting marks and handwritten typography.
 - Avoid theme switching; the blueprint visual is the single permanent presentation mode.
 - Keep the logo mark recognizable and high-contrast against the blueprint canvas.
+
+## Gearbuilder revision
+
+- [x] Rename the product and visible brand from GearDXF to Gearbuilder.
+- [x] Replace the header asset with the new transparent `abobakernobg.png` logo.
+- [x] Recompose the interface so the working sheet is centered, with tools and settings arranged around it.
+- [x] Support adding multiple Spur Gears, Internal Gears, and Gear Racks.
+- [x] Improve gear outlines to use more credible tooth shapes and component-specific geometry.
+- [x] Make placed components movable and animate meshing/interaction when the user runs the motion control.
+- [x] Revalidate measurement, export, responsive layout, and build output.
+- [x] Save a new checkpoint for delivery.
