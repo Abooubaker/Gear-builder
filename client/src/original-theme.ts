@@ -34,7 +34,10 @@ style.textContent = `
   #root svg[aria-label="Interactive gear designer canvas"] g > circle,
   #root svg[aria-label="Interactive gear designer canvas"] g > polygon { fill: #79d8f1 !important; stroke: #d9f8ff !important; stroke-width: 1.25 !important; filter: drop-shadow(0 0 2px rgba(214,241,251,.22)); }
   #root svg[aria-label="Interactive gear designer canvas"] text { fill: #effcff !important; stroke: none !important; paint-order: stroke; font-weight: 700; }
-  #root .gb-measure-status { position:absolute; top:16px; left:50%; transform:translateX(-50%); z-index:12; padding:9px 14px; border:1px solid rgba(214,241,251,.6); background:rgba(4,47,104,.88); color:#effcff; font:12px/1 var(--gb-hand); letter-spacing:.04em; pointer-events:none; box-shadow:0 3px 0 rgba(4,47,104,.2); }
+  #root .gb-measure-button { position:absolute; top:16px; left:50%; transform:translateX(-50%); z-index:13; padding:10px 16px; border:1px solid rgba(214,241,251,.7); background:#0b4f9c; color:#effcff; font:700 14px/1 var(--gb-hand); letter-spacing:.04em; cursor:pointer; box-shadow:0 3px 0 rgba(4,47,104,.25); }
+  #root .gb-measure-button:hover, #root .gb-measure-button.is-active { background:#ffd166; color:#073a76; }
+  #root .gb-measure-status { position:absolute; top:58px; left:50%; transform:translateX(-50%); z-index:12; padding:9px 14px; border:1px solid rgba(214,241,251,.6); background:rgba(4,47,104,.88); color:#effcff; font:12px/1 var(--gb-hand); letter-spacing:.04em; pointer-events:none; box-shadow:0 3px 0 rgba(4,47,104,.2); }
+  #root .gb-measure-status strong { color:#ffd166; }
   #root .gb-measure-status strong { color:#ffd166; }
   #root .gb-measure-overlay line { stroke:#ffd166; stroke-width:2.5; stroke-dasharray:8 5; vector-effect:non-scaling-stroke; }
   #root .gb-measure-overlay circle { fill:#ffd166; stroke:#effcff; stroke-width:2; vector-effect:non-scaling-stroke; }
@@ -50,10 +53,10 @@ const textOf = (element: Element) => (element.textContent || "").replace(/\s+/g,
 const shouldHide = (element: Element) => {
   const text = textOf(element);
   const id = (element as HTMLElement).id?.toLowerCase() || "";
-  const hint = (element as HTMLElement).getAttribute("hint")?.toLowerCase() || "";
+  const hint = ((element as HTMLElement).getAttribute("hint") || (element as HTMLElement).getAttribute("title") || "").toLowerCase();
   if (id.includes("account") || id.includes("profile") || id.includes("auth")) return true;
   if (hint.includes("account") || hint.includes("profile") || hint.includes("login") || hint.includes("logout")) return true;
-  if (text.includes("buy me a coffee") || text === "light" || text === "dark" || text.includes("log in") || text.includes("log out") || text.includes("login") || text.includes("logout") || text === "profile" || text.includes("sign in") || text.includes("sign out")) return true;
+  if (text.includes("buy me a coffee") || text.includes("feedback") || text.includes("rate us") || text.includes("tell us what you think") || text.includes("how was your experience") || text.includes("measure distance") || text.includes("center-to-center") || text === "light" || text === "dark" || text.includes("log in") || text.includes("log out") || text.includes("login") || text.includes("logout") || text === "profile" || text.includes("sign in") || text.includes("sign out")) return true;
   return false;
 };
 
@@ -121,24 +124,30 @@ function installArbitraryMeasurement(root: HTMLElement) {
   const svg = getCanvas(root);
   if (!svg || svg.dataset.gbMeasurementInstalled === "true") return;
   svg.dataset.gbMeasurementInstalled = "true";
+  const originalButton = Array.from(root.querySelectorAll("button")).find((button) => /measure distance/i.test(button.textContent || "")) as HTMLButtonElement | undefined;
+  if (originalButton) originalButton.dataset.gbHidden = "true";
   const state: { active: boolean; points: Array<{ x: number; y: number }> } = { active: false, points: [] };
   const overlay = addSvgElement("g", { class: "gb-measure-overlay", "pointer-events": "none" });
   svg.appendChild(overlay);
   const host = svg.parentElement as HTMLElement | null;
   if (host) host.style.position = "relative";
+  const measureButton = document.createElement("button");
+  measureButton.type = "button";
+  measureButton.className = "gb-measure-button";
+  measureButton.title = "Measure any two points on the workspace";
+  measureButton.textContent = "Measure any two points";
+  if (host) host.appendChild(measureButton);
   const status = document.createElement("div");
   status.className = "gb-measure-status";
   status.hidden = true;
-  status.innerHTML = "<strong>MEASURE ANYTHING</strong> · click two points on the sheet";
+  status.innerHTML = "<strong>MEASURE ANYTHING</strong> · click any two points on the sheet";
   if (host) host.appendChild(status);
 
   const render = () => {
     overlay.replaceChildren();
     if (!state.active) { status.hidden = true; return; }
     status.hidden = false;
-    if (state.points[0]) {
-      overlay.appendChild(addSvgElement("circle", { cx: String(state.points[0].x), cy: String(state.points[0].y), r: "5" }));
-    }
+    if (state.points[0]) overlay.appendChild(addSvgElement("circle", { cx: String(state.points[0].x), cy: String(state.points[0].y), r: "5" }));
     if (state.points[1]) {
       const first = state.points[0]; const second = state.points[1];
       const dx = second.x - first.x; const dy = second.y - first.y; const distance = Math.sqrt(dx * dx + dy * dy);
@@ -152,22 +161,53 @@ function installArbitraryMeasurement(root: HTMLElement) {
       status.innerHTML = `<strong>${distance.toFixed(2)} units</strong> · click another point to start a new measure`;
     }
   };
-  const setActive = (active: boolean) => { state.active = active; state.points = []; render(); };
-  const handleButton = (event: Event) => { event.preventDefault(); event.stopImmediatePropagation(); setActive(!state.active); };
-  root.addEventListener("click", (event) => {
-    const target = event.target as Element | null;
-    const button = target?.closest("button");
-    if (button && /measure distance/i.test(button.textContent || "")) handleButton(event);
-  }, true);
-  svg.addEventListener("pointerdown", (event) => {
-    if (!state.active || event.button !== 0) return;
+  const setActive = (active: boolean) => { state.active = active; state.points = []; measureButton.classList.toggle("is-active", active); render(); };
+  measureButton.addEventListener("click", (event) => { event.preventDefault(); event.stopImmediatePropagation(); setActive(!state.active); }, true);
+  const captureWorkspacePoint = (event: Event) => {
+    if (!state.active) return;
+    const pointer = event as PointerEvent;
+    if ("button" in pointer && pointer.button !== 0) return;
     event.preventDefault(); event.stopImmediatePropagation();
-    const point = svgPoint(svg, event); if (!point) return;
+    const point = svgPoint(svg, pointer); if (!point) return;
     state.points = state.points.length >= 2 ? [point] : [...state.points, point];
     render();
-  }, true);
+  };
+  svg.addEventListener("pointerdown", captureWorkspacePoint, true);
+  svg.addEventListener("mousedown", captureWorkspacePoint, true);
+  svg.addEventListener("click", (event) => { if (state.active) { event.preventDefault(); event.stopImmediatePropagation(); } }, true);
   window.addEventListener("keydown", (event) => { if (event.key === "Escape" && state.active) setActive(false); });
   render();
+}
+
+function restoreFunctionalCanvas(root: HTMLElement) {
+  const svg = getCanvas(root);
+  let node = svg?.parentElement as ElementWithGbFlag | null;
+  while (node && node !== root) {
+    delete node.dataset.gbHidden;
+    node.style.removeProperty("display");
+    node = node.parentElement as ElementWithGbFlag | null;
+  }
+}
+
+function removeAuxiliaryPanels(root: HTMLElement) {
+  root.querySelectorAll("*").forEach((element) => {
+    const text = textOf(element);
+    if (text.length < 240 && (text.includes("center-to-center tool") || text.includes("click the 2nd gear to measure") || text.includes("exit measure tool"))) {
+      const className = element.className?.toString() || "";
+      if (element.tagName === "BUTTON" || className.includes("items-center gap-3")) {
+        (element as ElementWithGbFlag).dataset.gbHidden = "true";
+      }
+    }
+    if (text === "about this tool" || text.startsWith("about this tool")) {
+      const card = element.closest("div.mt-4") as ElementWithGbFlag | null;
+      const target = card || (element.parentElement?.parentElement as ElementWithGbFlag | null);
+      if (target && target !== root) target.dataset.gbHidden = "true";
+    }
+    if (text.length < 260 && (text.includes("save your configuration") || text.includes("optional: save your designs") || text.includes("was this helpful") || text.includes("feedback") || text.includes("rate us"))) {
+      const target = (element.closest("div[class*='border'], div[class*='bg-'], section") || element) as ElementWithGbFlag;
+      target.dataset.gbHidden = "true";
+    }
+  });
 }
 
 function brightenGearArtwork(root: HTMLElement) {
@@ -185,7 +225,9 @@ function brightenGearArtwork(root: HTMLElement) {
 function applyTheme() {
   const root = document.getElementById("root");
   if (!root) return;
+  restoreFunctionalCanvas(root);
   hideUnwantedControls(root);
+  removeAuxiliaryPanels(root);
   normalizeBrandText(root);
   addBrand(root);
   installArbitraryMeasurement(root);

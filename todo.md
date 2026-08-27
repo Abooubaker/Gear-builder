@@ -42,3 +42,11 @@
 - [x] Brighten gear fills/strokes and their text labels against the blueprint field.
 - [x] Restyle Clear all gears with a visible warm warning treatment instead of a white button.
 - [x] Validate the interaction, build, and final preview, then save a new checkpoint.
+
+## Freehand measurement cleanup
+
+- [x] Replace all center-to-center measurement behavior with two arbitrary workspace points, even when clicking on empty sheet space or over a gear.
+- [x] Ensure the custom measurement handler wins over the original center-to-center handler and remains usable after rerenders.
+- [x] Remove every feedback box, feedback prompt, feedback link, and feedback modal from the visible app.
+- [x] Remove the entire About This Tool section and its remaining explanatory card.
+- [x] Validate the clean workspace, arbitrary-point measurement, build, and final preview, then save a new checkpoint.
