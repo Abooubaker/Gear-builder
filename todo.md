@@ -50,3 +50,17 @@
 - [x] Remove every feedback box, feedback prompt, feedback link, and feedback modal from the visible app.
 - [x] Remove the entire About This Tool section and its remaining explanatory card.
 - [x] Validate the clean workspace, arbitrary-point measurement, build, and final preview, then save a new checkpoint.
+
+## Standalone HTML export
+
+- [x] Inspect the current production bundle and identify external asset/runtime dependencies.
+- [x] Generate a single self-contained HTML file with inline CSS, JavaScript, and required image assets.
+- [x] Validate that the standalone file loads without the Vite/WebDev runtime and that measurement and gear controls still work.
+- [x] Deliver the standalone HTML file to the user.
+
+## Runtime duplicate declaration fix
+
+- [x] Inspect the active WebDev entrypoint and built scripts for duplicate `__vite__mapDeps` declarations.
+- [x] Remove the conflicting Vite/runtime inclusion without breaking the original editor bundle.
+- [x] Rebuild and verify `/` and `/?from_webdev=1` load without syntax or console errors.
+- [x] Save a fixed checkpoint for delivery.

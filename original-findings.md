@@ -23,3 +23,5 @@ The internal restart screenshot rendered the cleaned editor correctly, but a fre
 The dedicated freehand tool now accepted two arbitrary blank-sheet coordinates and returned `811.32 units` with two point markers and a line, without using gear centers. Feedback content was not visible. A remaining check found About This Tool text still present in the DOM, so its parent-card removal needs to be made stricter before delivery.
 
 Final validation passed: the freehand control measured two arbitrary workspace points and returned `739.65 units` with two markers and a line. The legacy center-to-center button was hidden, About This Tool text was absent, and feedback text was absent. The workspace rendered fully after the canvas-ancestor cleanup.
+
+Runtime duplicate declaration fix validation: the `/` preview and `/?from_webdev=1` now render the full Gearbuilder editor after separating the original prebuilt editor module from the Vite main import graph. The browser console returned no output/errors on the reported route, and the duplicate `__vite__mapDeps` SyntaxError did not recur.
