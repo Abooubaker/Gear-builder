@@ -35,6 +35,7 @@ style.textContent = `
   #root svg[aria-label="Interactive gear designer canvas"] g > circle,
   #root svg[aria-label="Interactive gear designer canvas"] g > polygon { fill: #79d8f1 !important; stroke: #d9f8ff !important; stroke-width: 1.25 !important; filter: drop-shadow(0 0 2px rgba(214,241,251,.22)); }
   #root svg[aria-label="Interactive gear designer canvas"] text { fill: #effcff !important; stroke: none !important; paint-order: stroke; font-weight: 700; }
+  #root svg[aria-label="Interactive gear designer canvas"] g.gb-dragging { cursor: grabbing !important; filter: drop-shadow(0 0 7px rgba(255,209,102,.55)); }
   #root .gb-measure-button { position:absolute; top:16px; left:50%; transform:translateX(-50%); z-index:13; padding:10px 16px; border:1px solid rgba(214,241,251,.7); background:#0b4f9c; color:#effcff; font:700 14px/1 var(--gb-hand); letter-spacing:.04em; cursor:pointer; box-shadow:0 3px 0 rgba(4,47,104,.25); }
   #root .gb-measure-button:hover, #root .gb-measure-button.is-active { background:#ffd166; color:#073a76; }
   #root .gb-measure-status { position:absolute; top:58px; left:50%; transform:translateX(-50%); z-index:12; padding:9px 14px; border:1px solid rgba(214,241,251,.6); background:rgba(4,47,104,.88); color:#effcff; font:12px/1 var(--gb-hand); letter-spacing:.04em; pointer-events:none; box-shadow:0 3px 0 rgba(4,47,104,.2); }
@@ -214,6 +215,91 @@ function installArbitraryMeasurement(root: HTMLElement) {
   render();
 }
 
+function installFreeGearDrag(root: HTMLElement) {
+  const svg = getCanvas(root);
+  if (!svg || svg.dataset.gbDragInstalled === "true") return;
+  svg.dataset.gbDragInstalled = "true";
+  svg.style.cursor = "default";
+  const gearGroups = () => Array.from(svg.querySelectorAll(":scope > g:not(.gb-measure-overlay)")).filter((group) => /M\s*[-+]?\d+(?:\.\d+)?\s*N\s*\d+\s*D\s*[-+]?\d+/i.test(group.textContent || "")) as SVGGElement[];
+  const gearGroupForTarget = (target: Element | null) => {
+    let node = target?.closest("g") as SVGGElement | null;
+    const groups = gearGroups();
+    while (node && node !== svg) {
+      if (groups.includes(node)) return node;
+      node = node.parentElement?.closest("g") as SVGGElement | null;
+    }
+    return null;
+  };
+  let drag: { group: SVGGElement; start: { x: number; y: number }; origin: { x: number; y: number } } | null = null;
+  const readTranslation = (transform: string | null) => {
+    const match = (transform || "").match(/translate\(\s*([-+]?\d+(?:\.\d+)?)\s*[, ]\s*([-+]?\d+(?:\.\d+)?)\s*\)/i);
+    return match ? { x: Number(match[1]), y: Number(match[2]) } : { x: 0, y: 0 };
+  };
+  const writeTranslation = (group: SVGGElement, x: number, y: number) => {
+    const current = group.getAttribute("transform") || "";
+    const next = /translate\(\s*[-+]?\d+(?:\.\d+)?\s*[, ]\s*[-+]?\d+(?:\.\d+)?\s*\)/i.test(current)
+      ? current.replace(/translate\(\s*[-+]?\d+(?:\.\d+)?\s*[, ]\s*[-+]?\d+(?:\.\d+)?\s*\)/i, `translate(${x}, ${y})`)
+      : `translate(${x}, ${y}) ${current}`;
+    group.setAttribute("transform", next);
+    group.dataset.gbDragTransform = next;
+  };
+  const finish = () => {
+    if (!drag) return;
+    drag.group.classList.remove("gb-dragging");
+    svg.style.cursor = "default";
+    drag = null;
+  };
+  svg.addEventListener("pointerdown", (event) => {
+    if (drag || (event as PointerEvent).button !== 0) return;
+    const target = event.target as Element | null;
+    const group = gearGroupForTarget(target);
+    if (!group || group.classList.contains("gb-measure-overlay")) return;
+    const point = svgPoint(svg, event as PointerEvent);
+    if (!point) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    drag = { group, start: point, origin: readTranslation(group.getAttribute("transform")) };
+    group.classList.add("gb-dragging");
+    svg.style.cursor = "grabbing";
+    try { svg.setPointerCapture((event as PointerEvent).pointerId); } catch { /* pointer capture is optional */ }
+  }, true);
+  svg.addEventListener("pointermove", (event) => {
+    if (!drag) return;
+    const point = svgPoint(svg, event as PointerEvent);
+    if (!point) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    writeTranslation(drag.group, drag.origin.x + point.x - drag.start.x, drag.origin.y + point.y - drag.start.y);
+  }, true);
+  svg.addEventListener("pointerup", finish, true);
+  svg.addEventListener("pointercancel", finish, true);
+  svg.addEventListener("lostpointercapture", finish, true);
+  // Mouse fallbacks keep dragging reliable in browsers or embedded previews that do not forward pointer events.
+  svg.addEventListener("mousedown", (event) => {
+    if (drag || event.button !== 0) return;
+    const target = event.target as Element | null;
+    const group = gearGroupForTarget(target);
+    if (!group || group.classList.contains("gb-measure-overlay")) return;
+    const point = svgPoint(svg, event as unknown as PointerEvent);
+    if (!point) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    drag = { group, start: point, origin: readTranslation(group.getAttribute("transform")) };
+    group.classList.add("gb-dragging");
+    svg.style.cursor = "grabbing";
+  }, true);
+  svg.addEventListener("mousemove", (event) => {
+    if (!drag) return;
+    const point = svgPoint(svg, event as unknown as PointerEvent);
+    if (!point) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    writeTranslation(drag.group, drag.origin.x + point.x - drag.start.x, drag.origin.y + point.y - drag.start.y);
+  }, true);
+  svg.addEventListener("mouseup", finish, true);
+  gearGroups().forEach((group) => { group.style.cursor = "grab"; });
+}
+
 function restoreFunctionalCanvas(root: HTMLElement) {
   const svg = getCanvas(root);
   let node = svg?.parentElement as ElementWithGbFlag | null;
@@ -323,6 +409,7 @@ function applyTheme() {
   normalizeBrandText(root);
   addBrand(root);
   installArbitraryMeasurement(root);
+  installFreeGearDrag(root);
   installExportSafety(root);
   brightenGearArtwork(root);
 }

@@ -81,3 +81,17 @@
 - [x] Remove the oversized Gearbuilder heading above the Clear all gears button.
 - [x] Validate accurate measurements and visual cleanup without breaking the original editor.
 - [x] Build and save a new checkpoint.
+
+## Latest standalone HTML export
+
+- [x] Rebuild the latest Gearbuilder source with the corrected millimetre calibration and branding cleanup.
+- [x] Regenerate one self-contained HTML file with inline CSS, JavaScript, and embedded image assets.
+- [x] Validate direct file loading and core editor interactions without the WebDev server.
+- [x] Deliver the refreshed standalone HTML artifact.
+
+## Free movement enhancement
+
+- [x] Let every placed gear move freely by dragging on the workspace.
+- [x] Keep gear selection, transforms, labels, measurement, and simulation state synchronized while dragging.
+- [x] Preserve export correctness after moving components.
+- [x] Validate Spur, Internal, and Rack movement and save a new checkpoint.

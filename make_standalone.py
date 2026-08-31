@@ -25,8 +25,18 @@ if logo.exists():
 html = re.sub(r'\s*<link[^>]+fonts\.googleapis\.com[^>]*>', '', html, flags=re.I)
 html = re.sub(r'\s*<link[^>]+fonts\.gstatic\.com[^>]*>', '', html, flags=re.I)
 
+# Neutralize analytics URLs that the original compiled app can inject at runtime.
+for runtime_url in (
+    'https://www.clarity.ms/tag/v3jpzqk7mv?ref=npm',
+    'https://www.googletagmanager.com/gtag/js?l=dataLayer&id=G-WSCX6L1JPC',
+    'https://www.clarity.ms',
+    'https://www.googletagmanager.com',
+):
+    html = html.replace(runtime_url, 'about:blank')
+
 # Keep the artifact clearly identified when opened directly from disk.
 html = html.replace('<title>Gearbuilder — Assembly Bench</title>', '<title>Gearbuilder — Standalone Gear Editor</title>')
+
 output.write_text(html, encoding='utf-8')
 print(f'Wrote {output} ({output.stat().st_size:,} bytes)')
 print('External Manus runtime scripts removed; logo embedded as a data URI.')
