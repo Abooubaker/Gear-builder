@@ -117,20 +117,29 @@ function svgPoint(svg: SVGSVGElement, event: PointerEvent) {
 }
 
 function estimateMillimetresPerSvgUnit(svg: SVGSVGElement) {
-  const svgRect = svg.getBoundingClientRect();
-  const viewBox = svg.viewBox.baseVal;
-  if (!svgRect.width || !viewBox.width) return 1;
   const gear = Array.from(svg.querySelectorAll(":scope > g:not(.gb-measure-overlay)")).find((candidate) => /M\s*[-+]?\d+(?:\.\d+)?\s*N\s*\d+\s*D\s*[-+]?\d+(?:\.\d+)?/i.test(candidate.textContent || ""));
   if (!gear) return 1;
-  const match = (gear.textContent || "").match(/M\s*([-+]?\d+(?:\.\d+)?)\s*N\s*(\d+)\s*D\s*([-+]?\d+(?:\.\d+)?)/i);
+  const match = (gear.textContent || "").match(/M\s*([-+]?\d+(?:\.\d+)?)\s*N\s*(\d+)\s*D\s*[-+]?\d+(?:\.\d+)?/i);
   if (!match) return 1;
   const module = Number(match[1]);
   const teeth = Number(match[2]);
   const outerDiameterMm = module * (teeth + 2);
-  const renderedGearWidth = gear.getBoundingClientRect().width;
-  const rootUnitsPerPixel = viewBox.width / svgRect.width;
-  const gearWidthInRootUnits = renderedGearWidth * rootUnitsPerPixel;
-  return gearWidthInRootUnits > 0 ? outerDiameterMm / gearWidthInRootUnits : 1;
+  const outlines = Array.from(gear.querySelectorAll("path, circle, polygon"));
+  const outline = outlines.reduce<SVGGraphicsElement | null>((largest, candidate) => {
+    const current = candidate as SVGGraphicsElement;
+    try {
+      if (!largest || current.getBBox().width * current.getBBox().height > largest.getBBox().width * largest.getBBox().height) return current;
+    } catch { /* ignore transient SVG nodes during React rerenders */ }
+    return largest;
+  }, null);
+  if (!outline) return 1;
+  const local = outline.getBBox();
+  const ctm = outline.getCTM();
+  if (!ctm || !local.width || !local.height) return 1;
+  const scaleX = Math.hypot(ctm.a, ctm.b);
+  const scaleY = Math.hypot(ctm.c, ctm.d);
+  const diameterInRootUnits = Math.max(local.width * scaleX, local.height * scaleY);
+  return diameterInRootUnits > 0 ? outerDiameterMm / diameterInRootUnits : 1;
 }
 
 function addSvgElement<T extends keyof SVGElementTagNameMap>(name: T, attributes: Record<string, string>) {
@@ -215,6 +224,22 @@ function restoreFunctionalCanvas(root: HTMLElement) {
   }
 }
 
+function removeOriginalBranding(root: HTMLElement) {
+  root.querySelectorAll("h1, h2, h3, p, svg text, div, span").forEach((element) => {
+    const text = textOf(element);
+    if ((element.tagName === "H1" || element.tagName === "H2" || element.tagName === "H3") && text === "gearbuilder") {
+      (element as ElementWithGbFlag).dataset.gbHidden = "true";
+    }
+    if (/^create precision spur gears\s*&\s*export to dxf\/svg\s*for free$/i.test(text)) {
+      (element as ElementWithGbFlag).dataset.gbHidden = "true";
+    }
+    if (text === "gearbuilder / drafting bench" && !element.closest(".gb-brand-overlay")) {
+      const target = (element.closest(".absolute") || element) as ElementWithGbFlag;
+      if (target !== root) target.dataset.gbHidden = "true";
+    }
+  });
+}
+
 function removeAuxiliaryPanels(root: HTMLElement) {
   root.querySelectorAll("*").forEach((element) => {
     const text = textOf(element);
@@ -294,6 +319,7 @@ function applyTheme() {
   restoreFunctionalCanvas(root);
   hideUnwantedControls(root);
   removeAuxiliaryPanels(root);
+  removeOriginalBranding(root);
   normalizeBrandText(root);
   addBrand(root);
   installArbitraryMeasurement(root);

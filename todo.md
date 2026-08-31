@@ -73,3 +73,11 @@
 - [x] Prevent DXF/SVG export failures from crashing the page and provide safe error handling.
 - [x] Improve any related editor states, status messaging, and interaction affordances discovered during testing.
 - [x] Build, test, and save a new checkpoint.
+
+## Measurement calibration and visual cleanup
+
+- [x] Recalibrate arbitrary-point distances against the original SVG’s true millimetre geometry, not screen or transformed bounds.
+- [x] Remove the Gearbuilder/DRAFTING BENCH watermark text from inside the working sheet.
+- [x] Remove the oversized Gearbuilder heading above the Clear all gears button.
+- [x] Validate accurate measurements and visual cleanup without breaking the original editor.
+- [x] Build and save a new checkpoint.

@@ -31,3 +31,9 @@ Stability inspection: the live editor uses an SVG viewBox matching its rendered 
 Stability enhancement validation: arbitrary workspace points now return a precise millimetre value (`345.58 mm`) and blank-sheet pointerdown completed without a captured runtime error. The revised hero copy is no longer present as the old `CREATE PRECISION...` text in the live DOM.
 
 Final stability validation: both DXF and SVG export buttons were clicked with no captured errors, and the SVG workspace remained mounted afterward. The millimetre measurement overlay remained active and the blank-space guard did not crash the editor.
+
+Calibration inspection: the live canvas viewBox is `0 0 510 1026`. The selected gear group is transformed with `scale(1.5,-1.5)`; its rendered bounds are about 264.71 px while its local geometry bounds are about 176.47 SVG units. The current calibration must account for the group transform and use the editor’s known diameter metadata rather than mixing screen bounds and root units.
+
+Visual cleanup inspection: the oversized heading is an original `H1` with text `GEARBUILDER` above the Clear all gears button. The workspace watermark is a div with class `font-black tracking-tight text-center text-slate-900 opacity-[0.04]` and text `GEARBUILDER / DRAFTING BENCH`. The canvas includes a transformed gear group, so measurement conversion must use the group transform scale rather than relying on screen bounds alone.
+
+Calibration and cleanup validation: a 200-SVG-unit horizontal span now reports `133.33 mm`, matching the selected 20-tooth module-6 gear’s 132 mm outer diameter scale within the drawing geometry. The oversized left `GEARBUILDER` heading and the `GEARBUILDER / DRAFTING BENCH` workspace watermark are both not visible in the live DOM. 
