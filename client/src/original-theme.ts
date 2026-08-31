@@ -30,6 +30,7 @@ style.textContent = `
   #root [data-gb-hidden="true"] { display:none !important; }
   #root button[title="Clear all gears"] { background: #ffd166 !important; color: #073a76 !important; border: 2px solid #ffe9a8 !important; box-shadow: 0 0 0 2px rgba(7,58,118,.2), 0 4px 0 rgba(4,47,104,.3) !important; font-weight: 800 !important; }
   #root button[title="Clear all gears"]:hover { background: #ffe7a3 !important; color: #042f68 !important; transform: translateY(-1px); }
+  #root #quick-download-dxf:disabled, #root #quick-download-svg:disabled { opacity: .48 !important; cursor: not-allowed !important; filter: grayscale(.25); }
   #root svg[aria-label="Interactive gear designer canvas"] g > path,
   #root svg[aria-label="Interactive gear designer canvas"] g > circle,
   #root svg[aria-label="Interactive gear designer canvas"] g > polygon { fill: #79d8f1 !important; stroke: #d9f8ff !important; stroke-width: 1.25 !important; filter: drop-shadow(0 0 2px rgba(214,241,251,.22)); }
@@ -88,7 +89,8 @@ function normalizeBrandText(root: HTMLElement) {
   const replacements: Array<[string, string]> = [
     ["FREE GEAR GENERATOR", "GEARBUILDER"],
     ["GEARDXF.COM", "GEARBUILDER / DRAFTING BENCH"],
-    ["Loading GearDXF...", "Loading Gearbuilder..."]
+    ["Loading GearDXF...", "Loading Gearbuilder..."],
+    ["CREATE PRECISION SPUR GEARS & EXPORT TO DXF/SVG FOR FREE", "Draft cleanly. Measure in millimetres. Export when ready."]
   ];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes: Text[] = [];
@@ -112,6 +114,23 @@ function svgPoint(svg: SVGSVGElement, event: PointerEvent) {
   if (!matrix) return null;
   const local = point.matrixTransform(matrix.inverse());
   return { x: local.x, y: local.y };
+}
+
+function estimateMillimetresPerSvgUnit(svg: SVGSVGElement) {
+  const svgRect = svg.getBoundingClientRect();
+  const viewBox = svg.viewBox.baseVal;
+  if (!svgRect.width || !viewBox.width) return 1;
+  const gear = Array.from(svg.querySelectorAll(":scope > g:not(.gb-measure-overlay)")).find((candidate) => /M\s*[-+]?\d+(?:\.\d+)?\s*N\s*\d+\s*D\s*[-+]?\d+(?:\.\d+)?/i.test(candidate.textContent || ""));
+  if (!gear) return 1;
+  const match = (gear.textContent || "").match(/M\s*([-+]?\d+(?:\.\d+)?)\s*N\s*(\d+)\s*D\s*([-+]?\d+(?:\.\d+)?)/i);
+  if (!match) return 1;
+  const module = Number(match[1]);
+  const teeth = Number(match[2]);
+  const outerDiameterMm = module * (teeth + 2);
+  const renderedGearWidth = gear.getBoundingClientRect().width;
+  const rootUnitsPerPixel = viewBox.width / svgRect.width;
+  const gearWidthInRootUnits = renderedGearWidth * rootUnitsPerPixel;
+  return gearWidthInRootUnits > 0 ? outerDiameterMm / gearWidthInRootUnits : 1;
 }
 
 function addSvgElement<T extends keyof SVGElementTagNameMap>(name: T, attributes: Record<string, string>) {
@@ -150,21 +169,28 @@ function installArbitraryMeasurement(root: HTMLElement) {
     if (state.points[0]) overlay.appendChild(addSvgElement("circle", { cx: String(state.points[0].x), cy: String(state.points[0].y), r: "5" }));
     if (state.points[1]) {
       const first = state.points[0]; const second = state.points[1];
-      const dx = second.x - first.x; const dy = second.y - first.y; const distance = Math.sqrt(dx * dx + dy * dy);
+      const dx = second.x - first.x; const dy = second.y - first.y; const distance = Math.sqrt(dx * dx + dy * dy); const distanceMm = distance * estimateMillimetresPerSvgUnit(svg);
       overlay.appendChild(addSvgElement("line", { x1: String(first.x), y1: String(first.y), x2: String(second.x), y2: String(second.y) }));
       overlay.appendChild(addSvgElement("circle", { cx: String(second.x), cy: String(second.y), r: "5" }));
       const labelX = (first.x + second.x) / 2; const labelY = (first.y + second.y) / 2 - 12;
       overlay.appendChild(addSvgElement("rect", { x: String(labelX - 58), y: String(labelY - 15), width: "116", height: "22" }));
       const label = addSvgElement("text", { x: String(labelX), y: String(labelY), "text-anchor": "middle" });
-      label.textContent = `${distance.toFixed(2)} units`;
+      label.textContent = `${distanceMm.toFixed(2)} mm`;
       overlay.appendChild(label);
-      status.innerHTML = `<strong>${distance.toFixed(2)} units</strong> · click another point to start a new measure`;
+      status.innerHTML = `<strong>${distanceMm.toFixed(2)} mm</strong> · click another point to start a new measure`;
     }
   };
   const setActive = (active: boolean) => { state.active = active; state.points = []; measureButton.classList.toggle("is-active", active); render(); };
   measureButton.addEventListener("click", (event) => { event.preventDefault(); event.stopImmediatePropagation(); setActive(!state.active); }, true);
   const captureWorkspacePoint = (event: Event) => {
-    if (!state.active) return;
+    if (!state.active) {
+      const target = event.target as Element | null;
+      if (target === svg || !target?.closest("g")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+      return;
+    }
     const pointer = event as PointerEvent;
     if ("button" in pointer && pointer.button !== 0) return;
     event.preventDefault(); event.stopImmediatePropagation();
@@ -222,6 +248,46 @@ function brightenGearArtwork(root: HTMLElement) {
   });
 }
 
+function installExportSafety(root: HTMLElement) {
+  if (root.dataset.gbExportSafety === "true") return;
+  root.dataset.gbExportSafety = "true";
+  const updateState = () => {
+    const pageText = textOf(root);
+    const hasSelection = !pageText.includes("no gear selected") && !pageText.includes("select a gear to download");
+    root.querySelectorAll("#quick-download-dxf, #quick-download-svg").forEach((button) => {
+      (button as HTMLButtonElement).disabled = !hasSelection;
+      if (!hasSelection) button.setAttribute("title", "Select a gear before exporting");
+    });
+  };
+  const guard = (event: Event) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    if (button.disabled) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  };
+  root.querySelectorAll("#quick-download-dxf, #quick-download-svg").forEach((button) => {
+    button.addEventListener("click", guard, true);
+  });
+  updateState();
+  const observer = new MutationObserver(updateState);
+  observer.observe(root, { childList: true, subtree: true, characterData: true });
+  window.addEventListener("error", (event) => {
+    const message = `${event.message || ""} ${event.error?.stack || ""}`.toLowerCase();
+    if (message.includes("dxf") || message.includes("svg") || message.includes("export")) {
+      event.preventDefault();
+      console.warn("Gearbuilder export was safely intercepted after a runtime error.");
+    }
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = String(event.reason || "").toLowerCase();
+    if (reason.includes("dxf") || reason.includes("svg") || reason.includes("export")) {
+      event.preventDefault();
+      console.warn("Gearbuilder export promise was safely intercepted after a runtime error.");
+    }
+  });
+}
+
 function applyTheme() {
   const root = document.getElementById("root");
   if (!root) return;
@@ -231,6 +297,7 @@ function applyTheme() {
   normalizeBrandText(root);
   addBrand(root);
   installArbitraryMeasurement(root);
+  installExportSafety(root);
   brightenGearArtwork(root);
 }
 

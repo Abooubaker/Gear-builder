@@ -25,3 +25,9 @@ The dedicated freehand tool now accepted two arbitrary blank-sheet coordinates a
 Final validation passed: the freehand control measured two arbitrary workspace points and returned `739.65 units` with two markers and a line. The legacy center-to-center button was hidden, About This Tool text was absent, and feedback text was absent. The workspace rendered fully after the canvas-ancestor cleanup.
 
 Runtime duplicate declaration fix validation: the `/` preview and `/?from_webdev=1` now render the full Gearbuilder editor after separating the original prebuilt editor module from the Vite main import graph. The browser console returned no output/errors on the reported route, and the duplicate `__vite__mapDeps` SyntaxError did not recur.
+
+Stability inspection: the live editor uses an SVG viewBox matching its rendered dimensions (currently 510 x 1026 in the narrow browser viewport). The native DXF and SVG export buttons are enabled even when selection state may be absent, which is a likely crash path. The visible hero copy still reads `CREATE PRECISION SPUR GEARS & EXPORT TO DXF/SVG FOR FREE` and needs replacement.
+
+Stability enhancement validation: arbitrary workspace points now return a precise millimetre value (`345.58 mm`) and blank-sheet pointerdown completed without a captured runtime error. The revised hero copy is no longer present as the old `CREATE PRECISION...` text in the live DOM.
+
+Final stability validation: both DXF and SVG export buttons were clicked with no captured errors, and the SVG workspace remained mounted afterward. The millimetre measurement overlay remained active and the blank-space guard did not crash the editor.

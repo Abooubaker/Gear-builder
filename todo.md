@@ -64,3 +64,12 @@
 - [x] Remove the conflicting Vite/runtime inclusion without breaking the original editor bundle.
 - [x] Rebuild and verify `/` and `/?from_webdev=1` load without syntax or console errors.
 - [x] Save a fixed checkpoint for delivery.
+
+## Stability and measurement enhancement
+
+- [x] Remove the awkward hero sentence about creating precision spur gears and free DXF/SVG export.
+- [x] Show arbitrary-point measurements precisely in millimetres, with predictable SVG coordinate conversion.
+- [x] Prevent blank-space clicks from reaching handlers that expect a selected gear.
+- [x] Prevent DXF/SVG export failures from crashing the page and provide safe error handling.
+- [x] Improve any related editor states, status messaging, and interaction affordances discovered during testing.
+- [x] Build, test, and save a new checkpoint.
