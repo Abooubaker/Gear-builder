@@ -45,6 +45,14 @@ style.textContent = `
   #root .gb-measure-overlay circle { fill:#ffd166; stroke:#effcff; stroke-width:2; vector-effect:non-scaling-stroke; }
   #root .gb-measure-overlay rect { fill:#042f68; stroke:#ffd166; stroke-width:1; rx:3; vector-effect:non-scaling-stroke; }
   #root .gb-measure-overlay text { fill:#effcff !important; font:700 13px var(--gb-mono); letter-spacing:.02em; }
+  #root .gb-drive-panel { position:fixed; right:24px; bottom:24px; z-index:1002; width:285px; padding:14px 16px; border:1px solid rgba(214,241,251,.72); background:rgba(4,47,104,.94); color:#effcff; box-shadow:6px 6px 0 rgba(4,47,104,.3); font-family:var(--gb-hand); }
+  #root .gb-drive-panel h3 { margin:0 0 10px; color:#effcff; font:700 19px/1 var(--gb-hand); }
+  #root .gb-drive-panel label { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:6px 0; color:rgba(214,241,251,.78); font-size:15px; }
+  #root .gb-drive-panel select, #root .gb-drive-panel input { width:122px; padding:4px 6px; border:1px solid rgba(214,241,251,.45); color:#effcff; background:rgba(11,79,156,.65) !important; font:11px var(--gb-mono) !important; }
+  #root .gb-drive-panel .gb-drive-values { margin-top:10px; padding-top:9px; border-top:1px dashed rgba(214,241,251,.42); }
+  #root .gb-drive-panel .gb-drive-row { display:flex; justify-content:space-between; gap:8px; padding:4px 0; color:rgba(214,241,251,.72); font:10px var(--gb-mono); }
+  #root .gb-drive-panel .gb-drive-row strong { color:#ffd166; font-weight:500; text-align:right; }
+  #root .gb-drive-panel .gb-drive-note { margin-top:8px; color:rgba(214,241,251,.54); font:9px/1.25 var(--gb-mono); }
   @media (max-width: 767px) { #root .gb-measure-status { top:10px; font-size:10px; padding:8px 10px; } }
   @media (max-width: 767px) { #root > div:first-child { padding-top:62px !important; } #root .gb-brand-overlay { height:62px; padding:10px 14px; } #root .gb-brand-overlay img { width:34px; height:34px; } #root .gb-brand-overlay strong { font-size:28px; } #root .gb-brand-overlay span { font-size:7px; } #root .gb-original-func-note { display:none; } }
 `;
@@ -163,13 +171,13 @@ function installArbitraryMeasurement(root: HTMLElement) {
   const measureButton = document.createElement("button");
   measureButton.type = "button";
   measureButton.className = "gb-measure-button";
-  measureButton.title = "Measure any two points on the workspace";
-  measureButton.textContent = "Measure any two points";
+  measureButton.title = "Measure center-to-center distance between two gears";
+  measureButton.textContent = "Measure gear distance";
   if (host) host.appendChild(measureButton);
   const status = document.createElement("div");
   status.className = "gb-measure-status";
   status.hidden = true;
-  status.innerHTML = "<strong>MEASURE ANYTHING</strong> · click any two points on the sheet";
+  status.innerHTML = "<strong>GEAR DISTANCE</strong> · click two gear components";
   if (host) host.appendChild(status);
 
   const render = () => {
@@ -187,7 +195,7 @@ function installArbitraryMeasurement(root: HTMLElement) {
       const label = addSvgElement("text", { x: String(labelX), y: String(labelY), "text-anchor": "middle" });
       label.textContent = `${distanceMm.toFixed(2)} mm`;
       overlay.appendChild(label);
-      status.innerHTML = `<strong>${distanceMm.toFixed(2)} mm</strong> · click another point to start a new measure`;
+    status.innerHTML = `<strong>${distanceMm.toFixed(2)} mm</strong> · click another gear to start a new measure`;
     }
   };
   const setActive = (active: boolean) => { state.active = active; state.points = []; measureButton.classList.toggle("is-active", active); render(); };
@@ -195,16 +203,19 @@ function installArbitraryMeasurement(root: HTMLElement) {
   const captureWorkspacePoint = (event: Event) => {
     if (!state.active) {
       const target = event.target as Element | null;
-      if (target === svg || !target?.closest("g")) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }
+      if (target === svg || !target?.closest("g")) { event.preventDefault(); event.stopImmediatePropagation(); }
       return;
     }
     const pointer = event as PointerEvent;
     if ("button" in pointer && pointer.button !== 0) return;
     event.preventDefault(); event.stopImmediatePropagation();
-    const point = svgPoint(svg, pointer); if (!point) return;
+    const target = event.target as Element | null;
+    const gear = target?.closest("g.pointer-events-auto") as SVGGElement | null;
+    if (!gear || !/M\s*[-+]?\d+(?:\.\d+)?\s*N\s*\d+\s*D\s*[-+]?\d+(?:\.\d+)?/i.test(gear.textContent || "")) return;
+    const center = svg.createSVGPoint(); center.x = 0; center.y = 0;
+    const centerMatrix = gear.getCTM();
+    const point = centerMatrix ? center.matrixTransform(centerMatrix) : svgPoint(svg, pointer);
+    if (!point) return;
     state.points = state.points.length >= 2 ? [point] : [...state.points, point];
     render();
   };
@@ -298,6 +309,52 @@ function installFreeGearDrag(root: HTMLElement) {
   }, true);
   svg.addEventListener("mouseup", finish, true);
   gearGroups().forEach((group) => { group.style.cursor = "grab"; });
+}
+
+function installDrivetrainPanel(root: HTMLElement) {
+  if (root.querySelector(".gb-drive-panel")) return;
+  const panel = document.createElement("section");
+  panel.className = "gb-drive-panel";
+  panel.innerHTML = `<h3>Drive calculations</h3><label>Input gear <select class="gb-drive-input"></select></label><label>Input RPM <input class="gb-drive-rpm" type="number" min="0" step="1" value="120" /></label><label>Input torque <input class="gb-drive-torque" type="number" min="0" step="0.1" value="4" /></label><div class="gb-drive-values"></div><p class="gb-drive-note">Select another gear in the assembly to compare its output. Spur meshes reverse direction; internal meshes keep direction.</p>`;
+  root.appendChild(panel);
+  const input = panel.querySelector(".gb-drive-input") as HTMLSelectElement;
+  const rpm = panel.querySelector(".gb-drive-rpm") as HTMLInputElement;
+  const torque = panel.querySelector(".gb-drive-torque") as HTMLInputElement;
+  const values = panel.querySelector(".gb-drive-values") as HTMLElement;
+  const readGears = () => Array.from(root.querySelectorAll('svg[aria-label="Interactive gear designer canvas"] > g > g.pointer-events-auto')).filter((group) => /M\s*[-+]?\d+(?:\.\d+)?\s*N\s*\d+\s*D\s*[-+]?\d+/i.test(group.textContent || "")) as SVGGElement[];
+  const parseGear = (group: SVGGElement, index: number) => {
+    const text = group.textContent || "";
+    const match = text.match(/^(.*?)\s*\(M\s*([-+]?\d+(?:\.\d+)?)\s*N\s*(\d+)\s*D/i);
+    const name = match?.[1]?.trim() || `Gear ${index + 1}`;
+    const module = Number(match?.[2] || 1);
+    const teeth = Number(match?.[3] || 1);
+    const kind = /rack/i.test(text) ? "Rack" : /internal/i.test(text) ? "Internal" : "Spur";
+    return { id: `${index}`, name, module, teeth, kind };
+  };
+  const render = () => {
+    const gears = readGears().map(parseGear);
+    if (!gears.length) return;
+    const current = input.value;
+    input.replaceChildren(...gears.map((gear) => { const option = document.createElement("option"); option.value = gear.id; option.textContent = `${gear.name} · ${gear.kind}`; return option; }));
+    input.value = gears.some((gear) => gear.id === current) ? current : gears[0].id;
+    const source = gears.find((gear) => gear.id === input.value) || gears[0];
+    const sourceDiameter = source.module * source.teeth;
+    const inputRpm = Math.max(0, Number(rpm.value) || 0);
+    const inputTorque = Math.max(0, Number(torque.value) || 0);
+    values.replaceChildren(...gears.map((gear) => {
+      const row = document.createElement("div"); row.className = "gb-drive-row";
+      const label = document.createElement("span"); label.textContent = gear.name;
+      const result = document.createElement("strong");
+      if (gear.id === source.id) result.textContent = `${inputRpm.toFixed(2)} rpm · ${inputTorque.toFixed(2)} N·m`;
+      else if (gear.kind === "Rack") result.textContent = `${(Math.PI * sourceDiameter * inputRpm / 60).toFixed(2)} mm/s · LINEAR`;
+      else { const ratio = sourceDiameter / Math.max(gear.module * gear.teeth, 0.001); const outRpm = inputRpm * ratio; const outTorque = inputTorque / Math.max(ratio, 0.001); const direction = source.kind === "Internal" || gear.kind === "Internal" ? "CW" : "CCW"; result.textContent = `${outRpm.toFixed(2)} rpm · ${outTorque.toFixed(2)} N·m · ${direction}`; }
+      row.append(label, result); return row;
+    }));
+  };
+  input.addEventListener("change", render); rpm.addEventListener("input", render); torque.addEventListener("input", render); render();
+  new MutationObserver((mutations) => {
+    if (mutations.some((mutation) => !(mutation.target as Element).closest?.(".gb-drive-panel"))) render();
+  }).observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["transform"] });
 }
 
 function restoreFunctionalCanvas(root: HTMLElement) {
@@ -410,6 +467,7 @@ function applyTheme() {
   addBrand(root);
   installArbitraryMeasurement(root);
   installFreeGearDrag(root);
+  installDrivetrainPanel(root);
   installExportSafety(root);
   brightenGearArtwork(root);
 }

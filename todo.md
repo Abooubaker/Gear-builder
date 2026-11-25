@@ -95,3 +95,12 @@
 - [x] Keep gear selection, transforms, labels, measurement, and simulation state synchronized while dragging.
 - [x] Preserve export correctness after moving components.
 - [x] Validate Spur, Internal, and Rack movement and save a new checkpoint.
+
+## Source measurement and drivetrain enhancement
+
+- [x] Restore the source editor's gear-to-gear distance measurement workflow while keeping calibrated millimetre output.
+- [x] Add an explicit input gear selector with editable input RPM and torque.
+- [x] Calculate and display output RPM, torque, and direction for selected/other gears from the gear ratio.
+- [x] Keep drivetrain calculations synchronized with gear type, tooth count, selection, and assembly edits.
+- [x] Validate source-style measurement, drivetrain calculations, build output, and standalone packaging.
+- [ ] Save a final checkpoint for delivery.

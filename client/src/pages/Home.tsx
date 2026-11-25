@@ -39,6 +39,13 @@ type GearNode = {
   length: number;
 };
 
+type DrivetrainResult = {
+  rpm: number | null;
+  torque: number | null;
+  direction: "CW" | "CCW" | "LINEAR";
+  linearSpeed: number | null;
+};
+
 const INITIAL_GEARS: GearNode[] = [
   { id: "spur-1", kind: "spur", teeth: 24, module: 2.5, x: 370, y: 320, rotation: 0, length: 360 },
   { id: "internal-1", kind: "internal", teeth: 44, module: 2.5, x: 805, y: 320, rotation: 0, length: 360 },
@@ -133,6 +140,34 @@ function gearShortLabel(kind: GearKind) {
   return "SPUR";
 }
 
+function pitchDiameter(gear: GearNode) {
+  return gear.kind === "rack" ? null : gear.teeth * gear.module;
+}
+
+function drivetrainResult(input: GearNode, output: GearNode, inputRpm: number, inputTorque: number): DrivetrainResult {
+  if (input.id === output.id) return { rpm: inputRpm, torque: inputTorque, direction: "CW", linearSpeed: null };
+  const inputPitch = pitchDiameter(input);
+  const outputPitch = pitchDiameter(output);
+  if (!inputPitch) return { rpm: null, torque: null, direction: "LINEAR", linearSpeed: null };
+  const inputPitchRadius = inputPitch / 2;
+  if (!outputPitch) {
+    return {
+      rpm: null,
+      torque: null,
+      direction: "LINEAR",
+      linearSpeed: (Math.PI * inputPitch * inputRpm) / 60,
+    };
+  }
+  const ratio = inputPitch / outputPitch;
+  const internalMesh = input.kind === "internal" || output.kind === "internal";
+  return {
+    rpm: inputRpm * ratio,
+    torque: inputTorque / Math.max(ratio, 0.0001),
+    direction: internalMesh ? "CW" : "CCW",
+    linearSpeed: inputTorque / Math.max(inputPitchRadius, 0.0001),
+  };
+}
+
 function localPointFromClient(event: { clientX: number; clientY: number }, canvas: SVGSVGElement) {
   const bounds = canvas.getBoundingClientRect();
   return {
@@ -206,13 +241,19 @@ export default function Home() {
   const [gears, setGears] = useState<GearNode[]>(INITIAL_GEARS);
   const [selectedId, setSelectedId] = useState("spur-1");
   const [points, setPoints] = useState<Point[]>([]);
+  const [measureGearIds, setMeasureGearIds] = useState<string[]>([]);
+  const [inputGearId, setInputGearId] = useState("spur-1");
+  const [inputRpm, setInputRpm] = useState(120);
+  const [inputTorque, setInputTorque] = useState(4);
   const [running, setRunning] = useState(false);
   const [motionPhase, setMotionPhase] = useState(0);
   const [dragging, setDragging] = useState<{ id: string; offset: Point } | null>(null);
   const canvasRef = useRef<SVGSVGElement | null>(null);
 
   const selectedGear = gears.find((gear) => gear.id === selectedId) ?? gears[0];
-  const driveGear = gears.find((gear) => gear.kind === "spur") ?? gears[0];
+  const driveGear = gears.find((gear) => gear.id === inputGearId) ?? gears[0];
+  const measuredGearA = gears.find((gear) => gear.id === measureGearIds[0]);
+  const measuredGearB = gears.find((gear) => gear.id === measureGearIds[1]);
   const measuredDistance = points.length === 2 ? distance(points[0], points[1]) * MM_PER_CANVAS_UNIT : null;
   const firstMm = points[0] ? pointToMm(points[0]) : null;
   const secondMm = points[1] ? pointToMm(points[1]) : null;
@@ -232,7 +273,7 @@ export default function Home() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() === "m") setTool("measure");
       if (event.key === "Escape") {
-        setPoints([]);
+        clearMeasurement();
         setDragging(null);
         setTool("select");
       }
@@ -263,23 +304,38 @@ export default function Home() {
     const remaining = gears.filter((gear) => gear.id !== selectedGear.id);
     setGears(remaining);
     setSelectedId(remaining[0].id);
+    if (selectedGear.id === inputGearId) setInputGearId(remaining[0].id);
+    if (measureGearIds.includes(selectedGear.id)) {
+      setMeasureGearIds([]);
+      setPoints([]);
+    }
   };
 
   const clearSheet = () => {
     setGears(INITIAL_GEARS);
     setSelectedId("spur-1");
     setPoints([]);
+    setMeasureGearIds([]);
+    setInputGearId("spur-1");
     setRunning(false);
     setTool("select");
   };
 
   const pointFromEvent = (event: { clientX: number; clientY: number }) => canvasRef.current ? localPointFromClient(event, canvasRef.current) : { x: 0, y: 0 };
+  const clearMeasurement = () => {
+    setPoints([]);
+    setMeasureGearIds([]);
+  };
 
   const handleGearPointerDown = (event: ReactPointerEvent<SVGGElement>, id: string) => {
     event.stopPropagation();
     const point = pointFromEvent(event);
     if (tool === "measure") {
-      setPoints((current) => current.length >= 2 ? [point] : [...current, point]);
+      const gear = gears.find((item) => item.id === id);
+      if (!gear) return;
+      const center = { x: gear.x, y: gear.y };
+      setMeasureGearIds((current) => current.length >= 2 || current.includes(id) ? [id] : [...current, id]);
+      setPoints((current) => current.length >= 2 || current.some((item) => item.x === center.x && item.y === center.y) ? [center] : [...current, center]);
       return;
     }
     const gear = gears.find((item) => item.id === id);
@@ -295,8 +351,7 @@ export default function Home() {
 
   const handleSheetPointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
     if (tool !== "measure") return;
-    const point = pointFromEvent(event);
-    setPoints((current) => current.length >= 2 ? [point] : [...current, point]);
+    event.preventDefault();
   };
 
   const handleSheetPointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
@@ -379,8 +434,8 @@ export default function Home() {
 
         <section className="drawing-column">
           <div className="canvas-heading">
-            <div><div className="section-label"><span>03</span> CENTER WORKING SHEET / DXF</div><p className="canvas-caption">{tool === "measure" ? "MEASURE MODE / ANY TWO LOCATIONS" : running ? "MOTION STUDY / COMPONENTS IN SYNC" : "DXF-READY / DRAG TO POSITION"}</p></div>
-            <div className="canvas-actions"><button type="button" className="small-icon-button" aria-label="Clear measurement" onClick={() => setPoints([])} title="Clear measurement"><Eraser size={16} /></button><button type="button" className="ink-button export-button" onClick={exportAssembly}><ArrowDownToLine size={16} /> Export SVG draft</button></div>
+            <div><div className="section-label"><span>03</span> CENTER WORKING SHEET / DXF</div><p className="canvas-caption">{tool === "measure" ? "MEASURE MODE / SELECT TWO GEARS" : running ? "MOTION STUDY / COMPONENTS IN SYNC" : "DXF-READY / DRAG TO POSITION"}</p></div>
+            <div className="canvas-actions"><button type="button" className="small-icon-button" aria-label="Clear measurement" onClick={clearMeasurement} title="Clear measurement"><Eraser size={16} /></button><button type="button" className="ink-button export-button" onClick={exportAssembly}><ArrowDownToLine size={16} /> Export SVG draft</button></div>
           </div>
 
           <div className={`drawing-surface ${tool === "measure" ? "measure-ready" : ""}`} style={{ backgroundImage: `url(${HERO_URL})` }}>
@@ -392,11 +447,11 @@ export default function Home() {
               <g className={`mesh-links ${running ? "is-running" : ""}`}><path d="M 370 320 L 805 320" /><path d="M 370 320 L 580 616" /></g>
               {gears.map((gear) => <GearGraphic key={gear.id} gear={gear} angle={gearAngle(gear)} rackOffset={rackOffset(gear)} selected={gear.id === selectedId} running={running} onPointerDown={handleGearPointerDown} />)}
               <g className="sheet-annotations"><text x="74" y="698">DRAG COMPONENTS TO TEST CLEARANCE</text><text x="930" y="698">SHEET 001 / A4</text></g>
-              {points.map((point, index) => <g key={`${point.x}-${point.y}`} className="measure-point"><circle cx={point.x} cy={point.y} r="9" /><circle cx={point.x} cy={point.y} r="3" /><line x1={point.x - 18} y1={point.y} x2={point.x + 18} y2={point.y} /><line x1={point.x} y1={point.y - 18} x2={point.x} y2={point.y + 18} /><text x={point.x + 14} y={point.y - 14}>P{index + 1}</text></g>)}
+              {points.map((point, index) => <g key={`${point.x}-${point.y}`} className="measure-point"><circle cx={point.x} cy={point.y} r="9" /><circle cx={point.x} cy={point.y} r="3" /><line x1={point.x - 18} y1={point.y} x2={point.x + 18} y2={point.y} /><line x1={point.x} y1={point.y - 18} x2={point.x} y2={point.y + 18} /><text x={point.x + 14} y={point.y - 14}>{index === 0 ? "GEAR 1" : "GEAR 2"}</text></g>)}
               {points.length === 2 ? <g className="measure-line"><line x1={points[0].x} y1={points[0].y} x2={points[1].x} y2={points[1].y} /><line x1={points[0].x} y1={points[0].y - 14} x2={points[0].x} y2={points[0].y + 14} /><line x1={points[1].x} y1={points[1].y - 14} x2={points[1].x} y2={points[1].y + 14} /></g> : null}
             </svg>
-            <div className="surface-footer-note"><Crosshair size={15} /> {tool === "measure" ? "Any point on the sheet is fair game." : "Select a component to edit its note."}</div>
-            {measuredDistance !== null && firstMm && secondMm ? <aside className="measurement-card" aria-live="polite"><div className="measurement-card-head"><span>FIELD MEASUREMENT</span><button type="button" aria-label="Clear measurement" onClick={() => setPoints([])}><X size={15} /></button></div><strong>{formatNumber(measuredDistance)} <small>mm</small></strong><div className="measurement-coordinates"><span>P1 <b>{formatNumber(firstMm.x)}, {formatNumber(firstMm.y)}</b></span><span>P2 <b>{formatNumber(secondMm.x)}, {formatNumber(secondMm.y)}</b></span></div><p>Click anywhere to start a new measure.</p></aside> : tool === "measure" ? <aside className="measurement-card waiting-card"><div className="measurement-card-head"><span>FIELD MEASUREMENT</span><Ruler size={15} /></div><strong>{points.length === 1 ? "Pick P2" : "Pick P1"}</strong><p>Two points, anywhere on the center sheet.</p></aside> : null}
+            <div className="surface-footer-note"><Crosshair size={15} /> {tool === "measure" ? "Select two gear components to measure center distance." : "Select a component to edit its note."}</div>
+            {measuredDistance !== null && firstMm && secondMm ? <aside className="measurement-card" aria-live="polite"><div className="measurement-card-head"><span>GEAR DISTANCE</span><button type="button" aria-label="Clear measurement" onClick={clearMeasurement}><X size={15} /></button></div><strong>{formatNumber(measuredDistance)} <small>mm</small></strong><div className="measurement-coordinates"><span>{measuredGearA ? gearShortLabel(measuredGearA.kind) : "GEAR 1"}<b>{formatNumber(firstMm.x)}, {formatNumber(firstMm.y)}</b></span><span>{measuredGearB ? gearShortLabel(measuredGearB.kind) : "GEAR 2"}<b>{formatNumber(secondMm.x)}, {formatNumber(secondMm.y)}</b></span></div><p>Click a gear to begin another measurement.</p></aside> : tool === "measure" ? <aside className="measurement-card waiting-card"><div className="measurement-card-head"><span>GEAR DISTANCE</span><Ruler size={15} /></div><strong>{points.length === 1 ? "Pick gear 2" : "Pick gear 1"}</strong><p>Choose two gears to measure center-to-center.</p></aside> : null}
           </div>
         </section>
 
@@ -404,9 +459,11 @@ export default function Home() {
           <section className="note-block inspector-intro"><div className="note-index">C—03</div><p className="note-kicker">INSPECTOR</p><h2>Shape the part.</h2><p className="note-copy">Edit the selected component, then drag it into the assembly.</p></section>
           <section className="tool-panel parameter-panel" aria-labelledby="selected-heading"><div className="section-label" id="selected-heading"><span>04</span> SELECTED PART</div>{selectedGear ? <><div className="selected-part-title"><span className="part-swatch" /> <div><strong>{gearLabel(selectedGear.kind)}</strong><small>{selectedGear.id}</small></div></div><label className="field-row"><span>Type</span><select value={selectedGear.kind} onChange={(event) => updateSelected({ kind: event.target.value as GearKind })}><option value="spur">Spur gear</option><option value="internal">Internal gear</option><option value="rack">Gear rack</option></select></label><label className="field-row"><span>Teeth</span><input type="number" min="6" max="120" value={selectedGear.teeth} onChange={(event) => updateSelected({ teeth: Number(event.target.value) || 6 })} /></label><label className="field-row"><span>Module</span><input type="number" min="0.5" max="12" step="0.1" value={selectedGear.module} onChange={(event) => updateSelected({ module: Number(event.target.value) || 0.5 })} /></label><label className="field-row"><span>Rotation</span><span className="field-with-unit"><input type="number" min="-360" max="360" value={Math.round(selectedGear.rotation)} onChange={(event) => updateSelected({ rotation: Number(event.target.value) || 0 })} /><em>°</em></span></label>{selectedGear.kind === "rack" ? <label className="field-row"><span>Rack length</span><span className="field-with-unit"><input type="number" min="120" max="900" step="10" value={selectedGear.length} onChange={(event) => updateSelected({ length: Number(event.target.value) || 120 })} /><em>px</em></span></label> : null}<div className="parameter-readout"><span>Pitch dia.</span><strong>{selectedGear.kind === "rack" ? `${formatNumber(selectedGear.length * MM_PER_CANVAS_UNIT)} mm` : `${formatNumber(gearRadius(selectedGear) * 2 * MM_PER_CANVAS_UNIT)} mm`}</strong></div><button className="remove-part" type="button" onClick={removeSelected} disabled={gears.length <= 1}><Trash2 size={14} /> Remove selected</button></> : null}</section>
 
-          <section className="tool-panel motion-panel" aria-labelledby="motion-heading"><div className="section-label" id="motion-heading"><span>05</span> MOTION STUDY</div><button className={`motion-button ${running ? "is-running" : ""}`} type="button" onClick={() => setRunning((value) => !value)}>{running ? <Pause size={16} /> : <Play size={16} />}<span>{running ? "Pause assembly" : "Run meshing"}</span><small>{running ? "All components are moving" : "Spur drives the study"}</small></button><div className="motion-readout"><span><i className={running ? "live-dot" : ""} /> {running ? "LIVE" : "STANDBY"}</span><span>{gears.length} parts</span></div></section>
+          <section className="tool-panel motion-panel" aria-labelledby="motion-heading"><div className="section-label" id="motion-heading"><span>05</span> MOTION STUDY</div><button className={`motion-button ${running ? "is-running" : ""}`} type="button" onClick={() => setRunning((value) => !value)}>{running ? <Pause size={16} /> : <Play size={16} />}<span>{running ? "Pause assembly" : "Run meshing"}</span><small>{running ? "All components are moving" : "Input gear drives the study"}</small></button><div className="motion-readout"><span><i className={running ? "live-dot" : ""} /> {running ? "LIVE" : "STANDBY"}</span><span>{gears.length} parts</span></div></section>
 
-          <section className="tool-panel assembly-panel" aria-labelledby="assembly-heading"><div className="section-label" id="assembly-heading"><span>06</span> ASSEMBLY PARTS</div><div className="assembly-list">{gears.map((gear) => <button type="button" key={gear.id} className={`assembly-item ${gear.id === selectedId ? "is-active" : ""}`} onClick={() => setSelectedId(gear.id)}><span className="part-swatch" /><span><strong>{gearLabel(gear.kind)}</strong><small>{gear.id} · {gear.teeth} teeth</small></span></button>)}</div></section>
+          <section className="tool-panel drivetrain-panel" aria-labelledby="drive-heading"><div className="section-label" id="drive-heading"><span>06</span> DRIVE INPUT</div><label className="field-row"><span>Input gear</span><select value={inputGearId} onChange={(event) => setInputGearId(event.target.value)}>{gears.map((gear) => <option key={gear.id} value={gear.id}>{gearShortLabel(gear.kind)} / {gear.id.split("-")[1]}</option>)}</select></label><label className="field-row"><span>Input RPM</span><span className="field-with-unit"><input type="number" min="0" step="1" value={inputRpm} onChange={(event) => setInputRpm(Math.max(0, Number(event.target.value) || 0))} /><em>rpm</em></span></label><label className="field-row"><span>Input torque</span><span className="field-with-unit"><input type="number" min="0" step="0.1" value={inputTorque} onChange={(event) => setInputTorque(Math.max(0, Number(event.target.value) || 0))} /><em>N·m</em></span></label><div className="drive-readout"><span>Selected output</span><strong>{selectedGear && drivetrainResult(driveGear, selectedGear, inputRpm, inputTorque).rpm !== null ? `${formatNumber(drivetrainResult(driveGear, selectedGear, inputRpm, inputTorque).rpm!)} rpm` : selectedGear?.kind === "rack" ? `${formatNumber(drivetrainResult(driveGear, selectedGear, inputRpm, inputTorque).linearSpeed!)} mm/s` : "—"}</strong><small>{selectedGear ? `${drivetrainResult(driveGear, selectedGear, inputRpm, inputTorque).direction} · ${drivetrainResult(driveGear, selectedGear, inputRpm, inputTorque).torque === null ? "linear output" : `${formatNumber(drivetrainResult(driveGear, selectedGear, inputRpm, inputTorque).torque!)} N·m`}` : "Select a part"}</small></div></section>
+
+          <section className="tool-panel assembly-panel" aria-labelledby="assembly-heading"><div className="section-label" id="assembly-heading"><span>07</span> OUTPUT READOUTS</div><div className="assembly-list">{gears.map((gear) => { const output = drivetrainResult(driveGear, gear, inputRpm, inputTorque); return <button type="button" key={gear.id} className={`assembly-item ${gear.id === selectedId ? "is-active" : ""}`} onClick={() => setSelectedId(gear.id)}><span className="part-swatch" /><span><strong>{gearLabel(gear.kind)}</strong><small>{gear.id} · {gear.id === inputGearId ? `${formatNumber(inputRpm)} rpm · ${formatNumber(inputTorque)} N·m input` : output.rpm === null ? `${formatNumber(output.linearSpeed ?? 0)} mm/s · ${output.direction}` : `${formatNumber(output.rpm)} rpm · ${formatNumber(output.torque ?? 0)} N·m · ${output.direction}`}</small></span></button>; })}</div></section>
 
           <button className="ink-button secondary-button" type="button" onClick={clearSheet}><RotateCcw size={16} /> Reset assembly</button>
           <div className="inspector-note"><Settings2 size={15} /><span>Drag any part. Run motion to see the drive relationship.</span></div>
