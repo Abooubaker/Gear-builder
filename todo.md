@@ -103,4 +103,4 @@
 - [x] Calculate and display output RPM, torque, and direction for selected/other gears from the gear ratio.
 - [x] Keep drivetrain calculations synchronized with gear type, tooth count, selection, and assembly edits.
 - [x] Validate source-style measurement, drivetrain calculations, build output, and standalone packaging.
-- [ ] Save a final checkpoint for delivery.
+- [x] Save a final checkpoint for delivery.
