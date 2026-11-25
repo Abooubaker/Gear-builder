@@ -33,7 +33,7 @@ style.textContent = `
   #root #quick-download-dxf:disabled, #root #quick-download-svg:disabled { opacity: .48 !important; cursor: not-allowed !important; filter: grayscale(.25); }
   #root svg[aria-label="Interactive gear designer canvas"] g > path,
   #root svg[aria-label="Interactive gear designer canvas"] g > circle,
-  #root svg[aria-label="Interactive gear designer canvas"] g > polygon { fill: #79d8f1 !important; stroke: #d9f8ff !important; stroke-width: 1.25 !important; filter: drop-shadow(0 0 2px rgba(214,241,251,.22)); }
+  #root svg[aria-label="Interactive gear designer canvas"] g > polygon { fill: #0b4f9c !important; stroke: #d9f8ff !important; stroke-width: 1.25 !important; filter: drop-shadow(0 0 2px rgba(214,241,251,.22)); }
   #root svg[aria-label="Interactive gear designer canvas"] text { fill: #effcff !important; stroke: none !important; paint-order: stroke; font-weight: 700; }
   #root svg[aria-label="Interactive gear designer canvas"] g.gb-dragging { cursor: grabbing !important; filter: drop-shadow(0 0 7px rgba(255,209,102,.55)); }
   #root .gb-measure-button { position:absolute; top:16px; left:50%; transform:translateX(-50%); z-index:13; padding:10px 16px; border:1px solid rgba(214,241,251,.7); background:#0b4f9c; color:#effcff; font:700 14px/1 var(--gb-hand); letter-spacing:.04em; cursor:pointer; box-shadow:0 3px 0 rgba(4,47,104,.25); }
@@ -45,7 +45,7 @@ style.textContent = `
   #root .gb-measure-overlay circle { fill:#ffd166; stroke:#effcff; stroke-width:2; vector-effect:non-scaling-stroke; }
   #root .gb-measure-overlay rect { fill:#042f68; stroke:#ffd166; stroke-width:1; rx:3; vector-effect:non-scaling-stroke; }
   #root .gb-measure-overlay text { fill:#effcff !important; font:700 13px var(--gb-mono); letter-spacing:.02em; }
-  #root .gb-drive-panel { position:fixed; right:24px; bottom:24px; z-index:1002; width:285px; padding:14px 16px; border:1px solid rgba(214,241,251,.72); background:rgba(4,47,104,.94); color:#effcff; box-shadow:6px 6px 0 rgba(4,47,104,.3); font-family:var(--gb-hand); }
+  #root .gb-drive-panel { position:relative; z-index:4; width:100%; margin-top:16px; padding:14px 16px; border:1px solid rgba(214,241,251,.72); background:rgba(4,47,104,.94); color:#effcff; box-shadow:6px 6px 0 rgba(4,47,104,.3); font-family:var(--gb-hand); }
   #root .gb-drive-panel h3 { margin:0 0 10px; color:#effcff; font:700 19px/1 var(--gb-hand); }
   #root .gb-drive-panel label { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:6px 0; color:rgba(214,241,251,.78); font-size:15px; }
   #root .gb-drive-panel select, #root .gb-drive-panel input { width:122px; padding:4px 6px; border:1px solid rgba(214,241,251,.45); color:#effcff; background:rgba(11,79,156,.65) !important; font:11px var(--gb-mono) !important; }
@@ -53,6 +53,18 @@ style.textContent = `
   #root .gb-drive-panel .gb-drive-row { display:flex; justify-content:space-between; gap:8px; padding:4px 0; color:rgba(214,241,251,.72); font:10px var(--gb-mono); }
   #root .gb-drive-panel .gb-drive-row strong { color:#ffd166; font-weight:500; text-align:right; }
   #root .gb-drive-panel .gb-drive-note { margin-top:8px; color:rgba(214,241,251,.54); font:9px/1.25 var(--gb-mono); }
+  #root .gb-drive-panel .gb-drive-play { margin-top:9px; width:100%; padding:7px 10px; border:1px solid rgba(214,241,251,.65); color:#073a76; background:#d6f1fb; font:700 12px var(--gb-hand); cursor:pointer; }
+  #root .gb-family-params { display:grid; grid-template-columns:1fr 1fr; gap:5px 8px; margin-top:9px; padding-top:8px; border-top:1px dashed rgba(214,241,251,.38); }
+  #root .gb-family-params label { margin:0; display:block; font:9px var(--gb-mono); }
+  #root .gb-family-params input { width:100%; box-sizing:border-box; margin-top:2px; font:10px var(--gb-mono) !important; }
+  #root .gb-selected-blueprint { margin-top:12px; padding-top:10px; border-top:1px dashed rgba(214,241,251,.38); }
+  #root .gb-selected-blueprint h4 { margin:0 0 7px; color:rgba(214,241,251,.72); font:10px var(--gb-mono); letter-spacing:.1em; text-transform:uppercase; }
+  #root .gb-selected-blueprint svg { display:block; width:100%; height:116px; border:1px solid rgba(214,241,251,.38); background:#0b4f9c !important; }
+  #root .gb-advanced-gears { margin-top:12px; padding-top:10px; border-top:1px dashed var(--gb-line); }
+  #root .gb-advanced-gears h4 { margin:0 0 8px; color:rgba(214,241,251,.62); font:9px var(--gb-mono); letter-spacing:.1em; text-transform:uppercase; }
+  #root .gb-advanced-gears-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+  #root .gb-advanced-gears button { padding:6px 5px; border:1px dashed rgba(214,241,251,.42); color:rgba(214,241,251,.78); background:transparent; font:13px var(--gb-hand); cursor:pointer; }
+  #root .gb-advanced-gears button:hover { color:#073a76; background:#d6f1fb; }
   @media (max-width: 767px) { #root .gb-measure-status { top:10px; font-size:10px; padding:8px 10px; } }
   @media (max-width: 767px) { #root > div:first-child { padding-top:62px !important; } #root .gb-brand-overlay { height:62px; padding:10px 14px; } #root .gb-brand-overlay img { width:34px; height:34px; } #root .gb-brand-overlay strong { font-size:28px; } #root .gb-brand-overlay span { font-size:7px; } #root .gb-original-func-note { display:none; } }
 `;
@@ -187,7 +199,7 @@ function installArbitraryMeasurement(root: HTMLElement) {
     if (state.points[0]) overlay.appendChild(addSvgElement("circle", { cx: String(state.points[0].x), cy: String(state.points[0].y), r: "5" }));
     if (state.points[1]) {
       const first = state.points[0]; const second = state.points[1];
-      const dx = second.x - first.x; const dy = second.y - first.y; const distance = Math.sqrt(dx * dx + dy * dy); const distanceMm = distance * estimateMillimetresPerSvgUnit(svg);
+      const dx = second.x - first.x; const dy = second.y - first.y; const distance = Math.sqrt(dx * dx + dy * dy); const scale = estimateMillimetresPerSvgUnit(svg); const distanceMm = distance * scale; const dxMm = dx * scale; const dyMm = -dy * scale; const angle = Math.atan2(dyMm, dxMm) * 180 / Math.PI;
       overlay.appendChild(addSvgElement("line", { x1: String(first.x), y1: String(first.y), x2: String(second.x), y2: String(second.y) }));
       overlay.appendChild(addSvgElement("circle", { cx: String(second.x), cy: String(second.y), r: "5" }));
       const labelX = (first.x + second.x) / 2; const labelY = (first.y + second.y) / 2 - 12;
@@ -195,7 +207,7 @@ function installArbitraryMeasurement(root: HTMLElement) {
       const label = addSvgElement("text", { x: String(labelX), y: String(labelY), "text-anchor": "middle" });
       label.textContent = `${distanceMm.toFixed(2)} mm`;
       overlay.appendChild(label);
-    status.innerHTML = `<strong>${distanceMm.toFixed(2)} mm</strong> · click another gear to start a new measure`;
+    status.innerHTML = `<strong>${distanceMm.toFixed(2)} mm</strong> · ΔX ${dxMm.toFixed(2)} · ΔY ${dyMm.toFixed(2)} · ${angle.toFixed(1)}° · click another gear to start a new measure`;
     }
   };
   const setActive = (active: boolean) => { state.active = active; state.points = []; measureButton.classList.toggle("is-active", active); render(); };
@@ -241,7 +253,7 @@ function installFreeGearDrag(root: HTMLElement) {
     }
     return null;
   };
-  let drag: { group: SVGGElement; start: { x: number; y: number }; origin: { x: number; y: number } } | null = null;
+  let drag: { group: SVGGElement; start: { x: number; y: number }; origin: { x: number; y: number }; moved?: boolean } | null = null;
   const readTranslation = (transform: string | null) => {
     const match = (transform || "").match(/translate\(\s*([-+]?\d+(?:\.\d+)?)\s*[, ]\s*([-+]?\d+(?:\.\d+)?)\s*\)/i);
     return match ? { x: Number(match[1]), y: Number(match[2]) } : { x: 0, y: 0 };
@@ -256,9 +268,12 @@ function installFreeGearDrag(root: HTMLElement) {
   };
   const finish = () => {
     if (!drag) return;
+    const clicked = !drag.moved;
+    const group = drag.group;
     drag.group.classList.remove("gb-dragging");
     svg.style.cursor = "default";
     drag = null;
+    if (clicked) group.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   };
   svg.addEventListener("pointerdown", (event) => {
     if (drag || (event as PointerEvent).button !== 0) return;
@@ -278,6 +293,7 @@ function installFreeGearDrag(root: HTMLElement) {
     if (!drag) return;
     const point = svgPoint(svg, event as PointerEvent);
     if (!point) return;
+    drag.moved = true;
     event.preventDefault();
     event.stopImmediatePropagation();
     writeTranslation(drag.group, drag.origin.x + point.x - drag.start.x, drag.origin.y + point.y - drag.start.y);
@@ -303,6 +319,7 @@ function installFreeGearDrag(root: HTMLElement) {
     if (!drag) return;
     const point = svgPoint(svg, event as unknown as PointerEvent);
     if (!point) return;
+    drag.moved = true;
     event.preventDefault();
     event.stopImmediatePropagation();
     writeTranslation(drag.group, drag.origin.x + point.x - drag.start.x, drag.origin.y + point.y - drag.start.y);
@@ -313,27 +330,76 @@ function installFreeGearDrag(root: HTMLElement) {
 
 function installDrivetrainPanel(root: HTMLElement) {
   if (root.querySelector(".gb-drive-panel")) return;
+  const motionButton = root.querySelector('button[aria-label="Stop"], button[title="Stop"]') as HTMLButtonElement | null;
+  const motionStrip = motionButton?.parentElement?.parentElement as ElementWithGbFlag | null;
+  if (motionStrip) motionStrip.dataset.gbHidden = "true";
   const panel = document.createElement("section");
   panel.className = "gb-drive-panel";
-  panel.innerHTML = `<h3>Drive calculations</h3><label>Input gear <select class="gb-drive-input"></select></label><label>Input RPM <input class="gb-drive-rpm" type="number" min="0" step="1" value="120" /></label><label>Input torque <input class="gb-drive-torque" type="number" min="0" step="0.1" value="4" /></label><div class="gb-drive-values"></div><p class="gb-drive-note">Select another gear in the assembly to compare its output. Spur meshes reverse direction; internal meshes keep direction.</p>`;
-  root.appendChild(panel);
+  panel.innerHTML = `<h3>Drive calculations</h3><label>Input gear <select class="gb-drive-input"></select></label><label>Input RPM <input class="gb-drive-rpm" type="number" min="0" step="1" value="120" /></label><label>Input torque <input class="gb-drive-torque" type="number" min="0" step="0.1" value="4" /></label><div class="gb-family-params"><label>Worm starts<input class="gb-worm-starts" type="number" min="1" step="1" value="1" /></label><label>Worm wheel teeth<input class="gb-worm-teeth" type="number" min="1" step="1" value="20" /></label><label>Sun teeth<input class="gb-sun-teeth" type="number" min="1" step="1" value="24" /></label><label>Ring teeth<input class="gb-ring-teeth" type="number" min="2" step="1" value="72" /></label><label>Helix angle °<input class="gb-helix-angle" type="number" min="0" max="45" step="1" value="20" /></label><label>Bevel cone angle °<input class="gb-bevel-angle" type="number" min="1" max="89" step="1" value="45" /></label></div><button type="button" class="gb-drive-play">Play motion</button><div class="gb-drive-values"></div><div class="gb-selected-blueprint"><h4>Selected blueprint</h4><svg class="gb-blueprint-svg" viewBox="0 0 260 116" role="img" aria-label="Selected gear blueprint"></svg></div><p class="gb-drive-note">Ideal mesh model: tooth ratio for spur/helical/bevel, starts ÷ wheel teeth for worm, and sun ÷ (sun + ring) for a planetary carrier.</p>`;
+  const exportCard = root.querySelector("#quick-download-dxf")?.closest("div.bg-white, div[class*='bg-white']");
+  const panelHost = exportCard?.parentElement || root;
+  panelHost.appendChild(panel);
   const input = panel.querySelector(".gb-drive-input") as HTMLSelectElement;
   const rpm = panel.querySelector(".gb-drive-rpm") as HTMLInputElement;
   const torque = panel.querySelector(".gb-drive-torque") as HTMLInputElement;
+  const play = panel.querySelector(".gb-drive-play") as HTMLButtonElement;
   const values = panel.querySelector(".gb-drive-values") as HTMLElement;
+  const blueprint = panel.querySelector(".gb-blueprint-svg") as SVGSVGElement;
+  const familyInputs = Array.from(panel.querySelectorAll(".gb-family-params input")) as HTMLInputElement[];
+  const gearState = { selected: null as SVGGElement | null, running: false };
+  play.addEventListener("click", () => { motionButton?.click(); gearState.running = !gearState.running; play.textContent = gearState.running ? "Pause motion" : "Play motion"; });
+  const drawBlueprint = (gear: SVGGElement | null) => {
+    const text = gear?.textContent || "Selected gear";
+    const kind = /worm/i.test(text) ? "WORM" : /planetary/i.test(text) ? "PLANETARY" : /helical/i.test(text) ? "HELICAL" : /bevel/i.test(text) ? "BEVEL" : /herringbone/i.test(text) ? "HERRINGBONE" : /rack/i.test(text) ? "RACK" : /internal/i.test(text) ? "INTERNAL" : "SPUR";
+    const teeth = Number(text.match(/N\s*(\d+)/i)?.[1] || 20);
+    const spokes = Array.from({ length: Math.min(teeth, 24) }, (_, i) => { const a = (i * 360) / Math.min(teeth, 24); return `<line x1="130" y1="58" x2="${130 + Math.cos(a * Math.PI / 180) * 47}" y2="${58 + Math.sin(a * Math.PI / 180) * 47}"/>`; }).join("");
+    const shape = kind === "RACK" ? `<path d="M25 70 H235 V85 H25 Z M30 70 l7 -16 7 16 7 -16 7 16 7 -16 7 16 7 -16 7 16 7 -16 7 16 7 -16 7 16 7 -16 7 16 7 -16 7 16 7 -16 7 16 7 -16 7 16"/>` : kind === "WORM" ? `<path d="M30 73 C75 25 185 25 230 73"/><path d="M40 53 L205 92 M58 42 L223 81 M76 35 L238 71"/>` : `<circle cx="130" cy="58" r="48"/><circle cx="130" cy="58" r="18"/>${spokes}`;
+    blueprint.innerHTML = `<g fill="none" stroke="#d6f1fb" stroke-width="1.7">${shape}</g><g fill="#d6f1fb" font-family="monospace" font-size="9"><text x="12" y="16">${kind} / BLUEPRINT</text><text x="12" y="108">PITCH / PROFILE / CENTRELINE</text></g>`;
+  };
   const readGears = () => Array.from(root.querySelectorAll('svg[aria-label="Interactive gear designer canvas"] > g > g.pointer-events-auto')).filter((group) => /M\s*[-+]?\d+(?:\.\d+)?\s*N\s*\d+\s*D\s*[-+]?\d+/i.test(group.textContent || "")) as SVGGElement[];
+  const classify = (text: string) => /worm/i.test(text) ? "Worm" : /planetary/i.test(text) ? "Planetary" : /helical/i.test(text) ? "Helical" : /bevel/i.test(text) ? "Bevel" : /herringbone/i.test(text) ? "Herringbone" : /rack/i.test(text) ? "Rack" : /internal/i.test(text) ? "Internal" : "Spur";
   const parseGear = (group: SVGGElement, index: number) => {
     const text = group.textContent || "";
     const match = text.match(/^(.*?)\s*\(M\s*([-+]?\d+(?:\.\d+)?)\s*N\s*(\d+)\s*D/i);
     const name = match?.[1]?.trim() || `Gear ${index + 1}`;
     const module = Number(match?.[2] || 1);
     const teeth = Number(match?.[3] || 1);
-    const kind = /rack/i.test(text) ? "Rack" : /internal/i.test(text) ? "Internal" : "Spur";
+    const kind = classify(text);
     return { id: `${index}`, name, module, teeth, kind };
   };
+  const selectGear = (group: SVGGElement) => {
+    readGears().forEach((candidate) => candidate.removeAttribute("data-gb-selected"));
+    gearState.selected = group;
+    group.setAttribute("data-gb-selected", "true");
+    drawBlueprint(group);
+  };
+  const wireSelectableGears = () => readGears().forEach((group) => { if (group.dataset.gbSelectable === "true") return; group.dataset.gbSelectable = "true"; group.addEventListener("click", () => selectGear(group)); });
+  const addAdvancedPanel = () => {
+    if (root.querySelector(".gb-advanced-gears")) return;
+    const addButton = Array.from(root.querySelectorAll("button")).find((button) => /add spur gear/i.test(button.getAttribute("hint") || button.title || "")) as HTMLButtonElement | undefined;
+    const host = addButton?.parentElement?.parentElement || root;
+    const advanced = document.createElement("section");
+    advanced.className = "gb-advanced-gears";
+    advanced.innerHTML = `<h4>Advanced gear families</h4><div class="gb-advanced-gears-grid">${["Worm", "Planetary", "Helical", "Bevel", "Herringbone"].map((name) => `<button type="button" data-gb-advanced="${name}">${name}</button>`).join("")}</div>`;
+    host.appendChild(advanced);
+    advanced.querySelectorAll("button[data-gb-advanced]").forEach((button) => button.addEventListener("click", () => {
+      const addSpur = Array.from(root.querySelectorAll("button")).find((item) => /add spur gear/i.test(item.getAttribute("hint") || item.title || "")) as HTMLButtonElement | undefined;
+      addSpur?.click();
+      window.setTimeout(() => {
+        const nameInput = root.querySelector('input[title="Gear Name"], input[aria-label="Gear Name"]') as HTMLInputElement | null;
+        const name = `${button.getAttribute("data-gb-advanced")} Gear`;
+        if (nameInput) { const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set; setter?.call(nameInput, name); nameInput.dispatchEvent(new Event("input", { bubbles: true })); nameInput.dispatchEvent(new Event("change", { bubbles: true })); }
+        const newGear = readGears().filter((group) => (group.textContent || "").includes(name)).at(-1);
+        if (newGear) selectGear(newGear);
+        render();
+      }, 80);
+    }));
+  };
+  addAdvancedPanel();
   const render = () => {
     const gears = readGears().map(parseGear);
     if (!gears.length) return;
+    wireSelectableGears();
     const current = input.value;
     input.replaceChildren(...gears.map((gear) => { const option = document.createElement("option"); option.value = gear.id; option.textContent = `${gear.name} · ${gear.kind}`; return option; }));
     input.value = gears.some((gear) => gear.id === current) ? current : gears[0].id;
@@ -341,17 +407,23 @@ function installDrivetrainPanel(root: HTMLElement) {
     const sourceDiameter = source.module * source.teeth;
     const inputRpm = Math.max(0, Number(rpm.value) || 0);
     const inputTorque = Math.max(0, Number(torque.value) || 0);
+    const wormStarts = Math.max(1, Number((panel.querySelector(".gb-worm-starts") as HTMLInputElement).value) || 1);
+    const wormTeeth = Math.max(1, Number((panel.querySelector(".gb-worm-teeth") as HTMLInputElement).value) || 20);
+    const sunTeeth = Math.max(1, Number((panel.querySelector(".gb-sun-teeth") as HTMLInputElement).value) || 24);
+    const ringTeeth = Math.max(sunTeeth + 1, Number((panel.querySelector(".gb-ring-teeth") as HTMLInputElement).value) || 72);
+    const helixEfficiency = Math.max(0.1, Math.cos(Number((panel.querySelector(".gb-helix-angle") as HTMLInputElement).value) * Math.PI / 180));
+    drawBlueprint(gearState.selected || readGears()[0] || null);
     values.replaceChildren(...gears.map((gear) => {
       const row = document.createElement("div"); row.className = "gb-drive-row";
       const label = document.createElement("span"); label.textContent = gear.name;
       const result = document.createElement("strong");
       if (gear.id === source.id) result.textContent = `${inputRpm.toFixed(2)} rpm · ${inputTorque.toFixed(2)} N·m`;
       else if (gear.kind === "Rack") result.textContent = `${(Math.PI * sourceDiameter * inputRpm / 60).toFixed(2)} mm/s · LINEAR`;
-      else { const ratio = sourceDiameter / Math.max(gear.module * gear.teeth, 0.001); const outRpm = inputRpm * ratio; const outTorque = inputTorque / Math.max(ratio, 0.001); const direction = source.kind === "Internal" || gear.kind === "Internal" ? "CW" : "CCW"; result.textContent = `${outRpm.toFixed(2)} rpm · ${outTorque.toFixed(2)} N·m · ${direction}`; }
+      else { const ratio = source.kind === "Worm" ? wormTeeth / wormStarts : gear.kind === "Worm" ? wormStarts / wormTeeth : source.kind === "Planetary" || gear.kind === "Planetary" ? sunTeeth / (sunTeeth + ringTeeth) : sourceDiameter / Math.max(gear.module * gear.teeth, 0.001); const outRpm = inputRpm * ratio; const outTorque = inputTorque / Math.max(ratio, 0.001) * (source.kind === "Helical" || gear.kind === "Helical" ? helixEfficiency : 1); const direction = source.kind === "Internal" || gear.kind === "Internal" || gear.kind === "Planetary" || source.kind === "Worm" || gear.kind === "Worm" ? "CW" : "CCW"; result.textContent = `${outRpm.toFixed(2)} rpm · ${outTorque.toFixed(2)} N·m · ${direction}`; }
       row.append(label, result); return row;
     }));
   };
-  input.addEventListener("change", render); rpm.addEventListener("input", render); torque.addEventListener("input", render); render();
+  input.addEventListener("change", render); rpm.addEventListener("input", render); torque.addEventListener("input", render); familyInputs.forEach((field) => field.addEventListener("input", render)); render();
   new MutationObserver((mutations) => {
     if (mutations.some((mutation) => !(mutation.target as Element).closest?.(".gb-drive-panel"))) render();
   }).observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["transform"] });
@@ -411,7 +483,7 @@ function brightenGearArtwork(root: HTMLElement) {
     const node = element as SVGElement;
     if (node.getAttribute("data-gb-bright") === "true") return;
     node.setAttribute("data-gb-bright", "true");
-    node.style.setProperty("fill", "#79d8f1", "important");
+    node.style.setProperty("fill", "#0b4f9c", "important");
     node.style.setProperty("stroke", "#d9f8ff", "important");
   });
 }
@@ -434,8 +506,13 @@ function installExportSafety(root: HTMLElement) {
       event.stopImmediatePropagation();
     }
   };
+  const download = (content: string, filename: string, type: string) => { const blob = new Blob([content], { type }); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); window.setTimeout(() => URL.revokeObjectURL(url), 500); };
+  const selectedGear = () => Array.from(root.querySelectorAll('svg[aria-label="Interactive gear designer canvas"] g.pointer-events-auto')).find((group) => group.getAttribute("data-gb-selected") === "true" || group.classList.contains("selected") || group.getAttribute("aria-selected") === "true") as SVGGElement | undefined;
+  const safeSvgExport = () => { const svg = getCanvas(root); if (!svg) return; const clone = svg.cloneNode(true) as SVGSVGElement; clone.querySelectorAll(".gb-measure-overlay").forEach((node) => node.remove()); download(new XMLSerializer().serializeToString(clone), "gearbuilder-selection.svg", "image/svg+xml;charset=utf-8"); };
+  const safeDxfExport = () => { const gear = selectedGear() || Array.from(root.querySelectorAll('svg[aria-label="Interactive gear designer canvas"] g.pointer-events-auto'))[0] as SVGGElement | undefined; const diameter = Number((gear?.textContent || "").match(/D\s*([-+]?\d+(?:\.\d+)?)/i)?.[1] || 100); const radius = diameter / 2; const points = Array.from({ length: 96 }, (_, index) => { const angle = (index / 96) * Math.PI * 2; return `0\nVERTEX\n8\n0\n10\n${(Math.cos(angle) * radius).toFixed(4)}\n20\n${(Math.sin(angle) * radius).toFixed(4)}\n`; }).join(""); download(`0\nSECTION\n2\nENTITIES\n${points}0\nSEQEND\n0\nENDSEC\n0\nEOF\n`, "gearbuilder-selection.dxf", "application/dxf"); };
   root.querySelectorAll("#quick-download-dxf, #quick-download-svg").forEach((button) => {
-    button.addEventListener("click", guard, true);
+    button.addEventListener("click", (event) => { event.preventDefault(); event.stopImmediatePropagation(); if ((button as HTMLElement).id === "quick-download-dxf") safeDxfExport(); else safeSvgExport(); }, true);
+    button.addEventListener("click", guard, false);
   });
   updateState();
   const observer = new MutationObserver(updateState);

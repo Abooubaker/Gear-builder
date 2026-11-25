@@ -8,7 +8,7 @@
 - [x] Remove profile and login/logout controls.
 - [x] Make distance measurement accept any two points and calculate their actual distance.
 - [x] Verify the app builds and key interactions work.
-- [ ] Save a final checkpoint for delivery.
+- [x] Save a final checkpoint for delivery.
 
 ## Style Decisions
 
@@ -104,3 +104,15 @@
 - [x] Keep drivetrain calculations synchronized with gear type, tooth count, selection, and assembly edits.
 - [x] Validate source-style measurement, drivetrain calculations, build output, and standalone packaging.
 - [x] Save a final checkpoint for delivery.
+
+## Workspace and extended gear-system revision
+
+- [x] Replace the bottom workspace control panel with the drive-calculations panel and add a play/pause control.
+- [x] Make gear fills navy to match the blueprint background, while preserving readable outlines and labels.
+- [x] Make gears reliably selectable by clicking them and prevent overlays, panels, and popups from obscuring each other.
+- [x] Fix DXF export so exporting never leaves the editor in an error state.
+- [x] Add worm, planetary, helical, bevel, and herringbone gear families with family labels, previews, and controls.
+- [x] Implement family-aware mesh equations for RPM, ratio, torque, direction, worm starts/wheel teeth, planetary sun/ring teeth, and helical efficiency.
+- [x] Show a blueprint drawing of the selected gear in the right-side export panel.
+- [x] Extend measurement with calibrated millimetres, ΔX, ΔY, and angle readouts.
+- [x] Validate new interactions, exports, equations, layout, and standalone packaging, then save a checkpoint.
